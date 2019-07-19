@@ -52,7 +52,7 @@ class DeckService {
             flagged: false,
             verified: true,
             includeInSealed: false,
-            houses: ['mars', 'logos', 'sanctum'],
+            houses: ['mars', 'logos', 'sanctum', 'dis', 'untamed', 'shadows', 'brobnar'],
             cards: cards,
             lastUpdated: new Date()
         });
