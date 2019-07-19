@@ -64,6 +64,10 @@ export class ImportDeck extends React.Component {
                                 <button className='btn btn-default' onClick={ this.onImportDeck }>Import { this.props.apiLoading && <span className='spinner button-spinner' /> }</button>
                             </div>
                         </Input>
+                        <p>You can also create a custom deck. Example:</p>
+                        <code>[wild-wormhole_20,mimicry_1]</code>
+                        <p>to create a deck with 20
+                        copies of wild wormhole and 1 copy of mimicry</p>
                     </Panel>
                 </div>
             </div>);
