@@ -30,6 +30,10 @@ export class ImportDeck extends React.Component {
 
     onImportDeck() {
         this.setState({ error: '' });
+        if(this.state.deckString[0] === '[') {
+            this.props.saveDeck({ custom: this.state.deckString });
+            return;
+        }
         let split = String(this.state.deckString).split('/');
         if(split[2] === 'www.keyforgegame.com' && split[3] === 'deck-details') {
             this.props.saveDeck({ uuid: split[4] });

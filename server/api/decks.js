@@ -35,11 +35,12 @@ module.exports.init = function (server) {
     }));
 
     server.post('/api/decks', passport.authenticate('jwt', { session: false }), wrapAsync(async function (req, res) {
-        if(!req.body.uuid) {
+        if(!req.body.uuid && !req.body.custom) {
             return res.send({ success: false, message: 'uuid must be specified' });
         }
 
-        let deck = Object.assign({}, { uuid: req.body.uuid, username: req.user.username });
+        let deck = Object.assign({}, { uuid: req.body.uuid, username: req.user.username, 
+            custom: req.body.custom});
         let savedDeck;
 
         try {

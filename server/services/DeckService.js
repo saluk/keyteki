@@ -1,6 +1,7 @@
 const logger = require('../log.js');
 const util = require('../util.js');
 const _ = require('underscore');
+const uuidv1 = require('uuid/v1');
 
 class DeckService {
     constructor(db) {
@@ -32,7 +33,36 @@ class DeckService {
         return decks;
     }
 
+    async createCustom(deck) {
+        let uuid = uuidv1();
+        let cardnames = deck.custom.slice(1,-1).split(',');
+        let cards = cardnames.map(card => {
+            let card_and_count = card.split("_");
+            let card_id = card_and_count[0];
+            let card_count = parseInt(card_and_count[1]);
+            return { id: card_id, count: card_count };
+        });
+        return await this.decks.insert({
+            username: deck.username,
+            uuid: uuid,
+            identity: 'Custom Deck ' + uuid,
+            cardback: '',
+            name: 'Custom Deck ' + uuid,
+            banned: false,
+            flagged: false,
+            verified: true,
+            includeInSealed: false,
+            houses: ['mars', 'logos', 'sanctum'],
+            cards: cards,
+            lastUpdated: new Date()
+        });
+    }
+
     async create(deck) {
+        if(deck.custom) {
+            return this.createCustom(deck);
+        }
+
         let deckResponse;
 
         try {

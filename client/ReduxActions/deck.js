@@ -43,7 +43,8 @@ export function deleteDeck(deck) {
 export function saveDeck(deck) {
 
     let str = JSON.stringify({
-        uuid: deck.uuid
+        uuid: deck.uuid,
+        custom: deck.custom
     });
 
     return {
