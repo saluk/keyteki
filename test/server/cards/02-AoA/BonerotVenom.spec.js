@@ -113,7 +113,7 @@ fdescribe('Bonerot Venom', function() {
                 expect(this.mackTheKnife.tokens.damage).not.toBe(2);
             });
             fit('should destroy umbra if umbra fights due to ganger chieftain', function() {
-		this.player1.play(this,umbra);
+		this.player1.play(this.umbra);
                 this.player1.playUpgrade(this.bonerotVenom, this.umbra);
                 expect(this.umbra.upgrades).toContain(this.bonerotVenom);
 		this.player1.endTurn();
