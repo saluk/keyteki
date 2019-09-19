@@ -112,7 +112,7 @@ fdescribe('Bonerot Venom', function() {
                 expect(this.mackTheKnife.exhausted).toBe(true);
                 expect(this.mackTheKnife.tokens.damage).not.toBe(2);
             });
-            fit('should destroy umbra if umbra fights due to ganger chieftain', function() {
+            it('should destroy umbra if umbra fights due to ganger chieftain', function() {
 		this.player1.play(this.umbra);
                 this.player1.playUpgrade(this.bonerotVenom, this.umbra);
                 expect(this.umbra.upgrades).toContain(this.bonerotVenom);
@@ -132,7 +132,23 @@ fdescribe('Bonerot Venom', function() {
 		expect(blypyp.location).toBe('discard');
 		expect(this.umbra.location).toBe('discard');
             });
-            fit('should destroy mack if mack fights due to ganger chieftain', function() {
+            it('should destroy umbra if umbra fights', function() {
+		let blypyp = this.player2.findCardByName('blypyp');
+		this.player1.play(this.umbra);
+                this.player1.playUpgrade(this.bonerotVenom, this.umbra);
+                expect(this.umbra.upgrades).toContain(this.bonerotVenom);
+		this.player1.endTurn();
+		this.player2.clickPrompt('untamed')
+		this.player2.endTurn();
+		this.player1.clickPrompt('shadows')
+		this.player1.clickCard(this.umbra)
+                this.player1.clickPrompt('Fight with this creature');
+                expect(this.player1).toBeAbleToSelect(blypyp);
+		this.player1.clickCard(blypyp)
+		expect(blypyp.location).toBe('discard');
+		expect(this.umbra.location).toBe('discard');
+            });
+            it('should destroy mack if mack fights due to ganger chieftain', function() {
                 this.player1.playUpgrade(this.bonerotVenom, this.mackTheKnife);
                 expect(this.mackTheKnife.upgrades).toContain(this.bonerotVenom);
 		this.player1.endTurn();
@@ -149,7 +165,7 @@ fdescribe('Bonerot Venom', function() {
                 expect(this.player1).toBeAbleToSelect(blypyp);
 		this.player1.clickCard(blypyp);
 		expect(blypyp.location).toBe('discard');
-		expect(this.mackTheKnife.tokens.damage).toBe(2);
+		expect(this.mackTheKnife.location).toBe('discard');
             });
 
         });
