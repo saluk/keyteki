@@ -164,8 +164,9 @@ class CardPile extends React.Component {
             return <a className='btn btn-default' key={ linkIndex++ } onClick={ () => this.onPopupMenuItemClick(menuItem) }>{ menuItem.text }</a>;
         }) }</div>) : null;
 
+        let popupTitle = this.props.popupTitle || this.props.title;
         popup = (
-            <MovablePanel title={ this.props.title } name={ this.props.source } onCloseClick={ this.onCloseClick } side={ this.props.popupLocation }>
+            <MovablePanel title={ popupTitle } name={ this.props.source } onCloseClick={ this.onCloseClick } side={ this.props.popupLocation }>
                 <Droppable onDragDrop={ this.props.onDragDrop } source={ this.props.source } manualMode={ this.props.manualMode }>
                     <div className={ popupClass } onClick={ event => event.stopPropagation() }>
                         { popupMenu }
@@ -252,6 +253,7 @@ CardPile.propTypes = {
     orientation: PropTypes.string,
     popupLocation: PropTypes.string,
     popupMenu: PropTypes.array,
+    popupTitle: PropTypes.string,
     size: PropTypes.string,
     source: PropTypes.oneOf(['hand', 'discard', 'play area', 'archives', 'deck', 'upgrade', 'faction', 'additional', 'purged']).isRequired,
     title: PropTypes.string,

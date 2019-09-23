@@ -10,6 +10,7 @@ import CardImage from './CardImage';
 import { ItemTypes } from '../../constants';
 
 import SquishableCardPanel from './SquishableCardPanel';
+import CardPile from './CardPile';
 
 const cardSource = {
     beginDrag(props) {
@@ -81,7 +82,6 @@ class InnerCard extends React.Component {
 
         if(this.isAllowedMenuSource() && this.props.card.menu && this.props.card.menu.length !== 0) {
             this.setState({ showMenu: !this.state.showMenu });
-
             return;
         }
 
@@ -125,22 +125,26 @@ class InnerCard extends React.Component {
             return null;
         }
 
-        var index = 1;
-        var upgrades = this.props.card.upgrades.map(upgrade => {
-            var returnedupgrade = (<Card key={ upgrade.uuid } source={ this.props.source } card={ upgrade }
-                className={ classNames('upgrade', `upgrade-${index}`) } wrapped={ false }
-                onMouseOver={ this.props.disableMouseOver ? null : this.onMouseOver.bind(this, upgrade) }
-                onMouseOut={ this.props.disableMouseOver ? null : this.onMouseOut }
-                onClick={ this.props.onClick }
-                onMenuItemClick={ this.props.onMenuItemClick }
-                size={ this.props.size } />);
+        let upgrades = this.props.card.upgrades;
+        if(upgrades.length === 0) {
+            return null;
+        }
 
-            index += 1;
-
-            return returnedupgrade;
-        });
-
-        return upgrades;
+        return (
+            <CardPile
+                cardCount={ upgrades.length }
+                cards={ upgrades }
+                className='upgrades'
+                orientation='horizontal'
+                source='upgrade'
+                onCardClick= { this.props.onClick }
+                onMouseOut= { this.props.onMouseOut }
+                onMouseOver= { this.props.onMouseOver }
+                topCard={ upgrades[0] }
+                size='small'
+                popupTitle={ this.props.card.name + ': upgrades' }
+                popupLocation= { this.props.popupLocation }
+                title='upgrades' />);
     }
 
     renderUnderneathCards() {
