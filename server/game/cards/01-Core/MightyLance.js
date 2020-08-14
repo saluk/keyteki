@@ -11,16 +11,17 @@ class MightyLance extends Card {
                 secondary: {
                     dependsOn: 'initial',
                     cardType: 'creature',
-                    cardCondition: (card, context) => context.targets.initial.neighbors.includes(card),
+                    cardCondition: (card, context) =>
+                        context.targets.initial.neighbors.includes(card),
                     gameAction: ability.actions.dealDamage({ amount: 3 })
                 }
             },
-            effect: 'deal 3 damage to {1} and {2}',
-            effectArgs: context => Object.values(context.targets)
+            effect: 'deal 3 damage to {1}',
+            effectArgs: (context) => [Object.values(context.targets)]
         });
     }
 }
 
-MightyLance.id = 'mighty-lance'; // This is a guess at what the id might be - please check it!!!
+MightyLance.id = 'mighty-lance';
 
 module.exports = MightyLance;

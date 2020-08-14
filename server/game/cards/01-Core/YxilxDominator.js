@@ -2,15 +2,13 @@ const Card = require('../../Card.js');
 
 class YxilxDominator extends Card {
     setupCardAbilities(ability) {
-        this.constantReaction({
-            when: {
-                onCardEntersPlay: (event, context) => event.card === context.source
-            },
-            gameAction: ability.actions.stun()
+        this.persistentEffect({
+            location: 'any',
+            effect: ability.effects.entersPlayStunned()
         });
     }
 }
 
-YxilxDominator.id = 'yxilx-dominator'; // This is a guess at what the id might be - please check it!!!
+YxilxDominator.id = 'yxilx-dominator';
 
 module.exports = YxilxDominator;

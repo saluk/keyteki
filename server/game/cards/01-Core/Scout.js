@@ -13,7 +13,7 @@ class Scout extends Card {
                 })
             },
             effect: 'give Skirmish to {0} and fight with them',
-            then: context => ({
+            then: (context) => ({
                 gameAction: ability.actions.sequentialForEach({
                     forEach: context.target,
                     action: ability.actions.fight()
@@ -23,6 +23,6 @@ class Scout extends Card {
     }
 }
 
-Scout.id = 'scout'; // This is a guess at what the id might be - please check it!!!
+Scout.id = 'scout';
 
 module.exports = Scout;

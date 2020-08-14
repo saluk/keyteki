@@ -6,13 +6,13 @@ class JohnSmyth extends Card {
             reap: true,
             target: {
                 cardType: 'creature',
-                cardCondition: card => !card.hasTrait('agent') && card.hasHouse('mars'),
+                cardCondition: (card) => !card.hasTrait('agent') && card.hasHouse('mars'),
                 gameAction: ability.actions.ready()
             }
         });
     }
 }
 
-JohnSmyth.id = 'john-smyth'; // This is a guess at what the id might be - please check it!!!
+JohnSmyth.id = 'john-smyth';
 
 module.exports = JohnSmyth;

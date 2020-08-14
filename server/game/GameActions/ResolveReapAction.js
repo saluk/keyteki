@@ -8,9 +8,10 @@ class ResolveReapAction extends CardGameAction {
     }
 
     canAffect(card, context) {
-        if(card.location !== 'play area' || !card.checkRestrictions('reap')) {
+        if (card.location !== 'play area' || !card.checkRestrictions('reap')) {
             return false;
         }
+
         return card.checkRestrictions('use', context) && super.canAffect(card, context);
     }
 

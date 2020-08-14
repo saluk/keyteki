@@ -5,13 +5,13 @@ class Snudge extends Card {
         this.fight({
             reap: true,
             target: {
-                cardCondition: card => card.type === 'artifact' || card.isOnFlank(),
+                cardCondition: (card) => card.type === 'artifact' || card.isOnFlank(),
                 gameAction: ability.actions.returnToHand()
             }
         });
     }
 }
 
-Snudge.id = 'snudge'; // This is a guess at what the id might be - please check it!!!
+Snudge.id = 'snudge';
 
 module.exports = Snudge;

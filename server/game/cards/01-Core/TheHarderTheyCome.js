@@ -5,13 +5,13 @@ class TheHarderTheyCome extends Card {
         this.play({
             target: {
                 cardType: 'creature',
-                cardCondition: card => card.power >= 5,
+                cardCondition: (card) => card.power >= 5,
                 gameAction: ability.actions.purge()
             }
         });
     }
 }
 
-TheHarderTheyCome.id = 'the-harder-they-come'; // This is a guess at what the id might be - please check it!!!
+TheHarderTheyCome.id = 'the-harder-they-come';
 
 module.exports = TheHarderTheyCome;

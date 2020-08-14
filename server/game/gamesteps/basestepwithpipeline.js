@@ -5,7 +5,6 @@ class BaseStepWithPipeline extends BaseStep {
     constructor(game) {
         super(game);
         this.pipeline = new GamePipeline();
-
     }
 
     queueStep(step) {
@@ -35,7 +34,7 @@ class BaseStepWithPipeline extends BaseStep {
     continue() {
         try {
             return this.pipeline.continue();
-        } catch(e) {
+        } catch (e) {
             this.game.reportError(e);
             return true;
         }

@@ -4,19 +4,19 @@ class SoftLanding extends Card {
     setupCardAbilities(ability) {
         this.play({
             effect: 'make the next creature/artifact played this turn enter play ready',
-            gameAction: ability.actions.forRemainderOfTurn(context => ({
+            gameAction: ability.actions.forRemainderOfTurn((context) => ({
                 when: {
-                    onCardPlayed: event =>
-                        (event.card.type === 'creature' || event.card.type === 'artifact') && context.player === event.player
+                    onCardPlayed: (event) =>
+                        (event.card.type === 'creature' || event.card.type === 'artifact') &&
+                        context.player === event.player
                 },
                 multipleTrigger: false,
-                message: '{2} is readied due to {1}\'s effect',
-                gameAction: ability.actions.ready()
+                gameAction: ability.actions.ready((context) => ({ target: context.event.card }))
             }))
         });
     }
 }
 
-SoftLanding.id = 'soft-landing'; // This is a guess at what the id might be - please check it!!!
+SoftLanding.id = 'soft-landing';
 
 module.exports = SoftLanding;

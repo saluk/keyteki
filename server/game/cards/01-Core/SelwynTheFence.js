@@ -6,18 +6,18 @@ class SelwynTheFence extends Card {
             reap: true,
             target: {
                 activePromptTitle: 'Choose a captured amber to move to your pool.',
-                cardCondition: card => card.hasToken('amber'),
+                cardCondition: (card) => card.hasToken('amber'),
                 controller: 'self',
                 gameAction: ability.actions.removeAmber()
             },
             effect: 'move 1 amber from {0} to their pool',
-            then:{
+            then: {
                 gameAction: ability.actions.gainAmber()
             }
         });
     }
 }
 
-SelwynTheFence.id = 'selwyn-the-fence'; // This is a guess at what the id might be - please check it!!!
+SelwynTheFence.id = 'selwyn-the-fence';
 
 module.exports = SelwynTheFence;

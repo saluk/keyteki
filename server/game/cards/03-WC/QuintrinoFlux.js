@@ -6,27 +6,32 @@ class QuintrinoFlux extends Card {
             targets: {
                 friendly: {
                     cardType: 'creature',
-                    controller: 'opponent',
+                    controller: 'self',
                     gameAction: ability.actions.destroy()
                 },
                 enemy: {
                     cardType: 'creature',
-                    controller: 'self',
+                    controller: 'opponent',
                     gameAction: ability.actions.destroy()
                 }
             },
+            gameAction: ability.actions.destroy((context) => ({
+                target: context.game.creaturesInPlay.filter(
+                    (card) =>
+                        Object.values(context.targets).some(
+                            (target) => card.power === target.power
+                        ) && Object.values(context.targets).every((target) => target !== card)
+                )
+            })),
             effect: 'destroy {1}',
-            effectArgs: context => [[context.targets.enemy, context.targets.friendly]],
-            then: (preThenContext) => ({
-                gameAction: [
-                    ability.actions.destroy({
-                        target: preThenContext.game.creaturesInPlay.filter(card => card.power === preThenContext.targets.friendly.power)
-                    }),
-                    ability.actions.destroy({
-                        target: preThenContext.game.creaturesInPlay.filter(card => card.power === preThenContext.targets.enemy.power)
-                    })
-                ]
-            })
+            effectArgs: (context) => [
+                context.game.creaturesInPlay.filter(
+                    (card) =>
+                        (context.targets.friendly &&
+                            card.power === context.targets.friendly.power) ||
+                        (context.targets.enemy && card.power === context.targets.enemy.power)
+                )
+            ]
         });
     }
 }

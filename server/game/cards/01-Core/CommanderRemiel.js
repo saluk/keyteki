@@ -6,13 +6,13 @@ class CommanderRemiel extends Card {
             target: {
                 cardType: 'creature',
                 controller: 'self',
-                cardCondition: card => !card.hasHouse('sanctum'),
+                cardCondition: (card) => !card.hasHouse('sanctum'),
                 gameAction: ability.actions.use()
             }
         });
     }
 }
 
-CommanderRemiel.id = 'commander-remiel'; // This is a guess at what the id might be - please check it!!!
+CommanderRemiel.id = 'commander-remiel';
 
 module.exports = CommanderRemiel;

@@ -6,19 +6,20 @@ class SwapWidget extends Card {
             target: {
                 cardType: 'creature',
                 controller: 'self',
-                cardCondition: card => card.hasHouse('mars') && !card.exhausted,
+                cardCondition: (card) => card.hasHouse('mars') && !card.exhausted,
                 gameAction: ability.actions.returnToHand()
             },
-            then: preThenContext => ({
+            then: (preThenContext) => ({
                 target: {
                     cardType: 'creature',
                     controller: 'self',
                     location: 'hand',
-                    cardCondition: card => card.hasHouse('mars') && card.name !== preThenContext.target.name,
+                    cardCondition: (card) =>
+                        card.hasHouse('mars') && card.name !== preThenContext.target.name,
                     gameAction: ability.actions.putIntoPlay()
                 },
                 message: '{0} puts {2} into play using {1}, and readies it',
-                then: context => ({
+                then: (context) => ({
                     gameAction: ability.actions.ready({ target: context.target })
                 })
             })
@@ -26,6 +27,6 @@ class SwapWidget extends Card {
     }
 }
 
-SwapWidget.id = 'swap-widget'; // This is a guess at what the id might be - please check it!!!
+SwapWidget.id = 'swap-widget';
 
 module.exports = SwapWidget;

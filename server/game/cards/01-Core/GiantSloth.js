@@ -3,8 +3,7 @@ const Card = require('../../Card.js');
 class GiantSloth extends Card {
     setupCardAbilities(ability) {
         this.persistentEffect({
-            condition: () => !this.game.cardsDiscarded.some(card => card.hasHouse('untamed')),
-            match: this,
+            condition: () => !this.game.cardsDiscarded.some((card) => card.hasHouse('untamed')),
             effect: ability.effects.cardCannot('use')
         });
 
@@ -14,6 +13,6 @@ class GiantSloth extends Card {
     }
 }
 
-GiantSloth.id = 'giant-sloth'; // This is a guess at what the id might be - please check it!!!
+GiantSloth.id = 'giant-sloth';
 
 module.exports = GiantSloth;

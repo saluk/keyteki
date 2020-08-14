@@ -8,14 +8,17 @@ class RemoveStunAction extends CardGameAction {
     }
 
     canAffect(card, context) {
-        if(card.location !== 'play area') {
+        if (card.location !== 'play area') {
             return false;
         }
+
         return super.canAffect(card, context);
     }
 
     getEvent(card, context) {
-        return super.createEvent('onRemoveStun', { card: card, context: context }, () => card.unstun());
+        return super.createEvent('onRemoveStun', { card: card, context: context }, () =>
+            card.unstun()
+        );
     }
 }
 

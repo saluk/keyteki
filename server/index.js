@@ -1,30 +1,31 @@
-const Server = require('./server.js');
-const Lobby = require('./lobby.js');
 const pmx = require('pmx');
-const monk = require('monk');
-const config = require('config');
+
+const Server = require('./server');
+const Lobby = require('./lobby');
 const UserService = require('./services/UserService');
 const ConfigService = require('./services/ConfigService');
 const configService = new ConfigService();
 
-function runServer() {
-    let options = { configService: configService, db: monk(config.dbPath) };
+async function runServer() {
+    let options = { configService: configService };
 
-    options.userService = new UserService(options.db, options.configService);
+    options.userService = new UserService(options.configService);
 
     let server = new Server(process.env.NODE_ENV !== 'production');
     let httpServer = server.init(options);
     let lobby = new Lobby(httpServer, options);
 
-    pmx.action('status', reply => {
+    await lobby.init();
+
+    pmx.action('status', (reply) => {
         var status = lobby.getStatus();
 
         reply(status);
     });
 
     pmx.action('disable', (param, reply) => {
-        if(!param) {
-            reply({error: 'Need to specify node to disable'});
+        if (!param) {
+            reply({ error: 'Need to specify node to disable' });
 
             return;
         }
@@ -33,8 +34,8 @@ function runServer() {
     });
 
     pmx.action('enable', (param, reply) => {
-        if(!param) {
-            reply({error: 'Need to specify node to enable'});
+        if (!param) {
+            reply({ error: 'Need to specify node to enable' });
 
             return;
         }
@@ -42,7 +43,7 @@ function runServer() {
         reply({ success: lobby.enableNode(param) });
     });
 
-    pmx.action('debug', reply => {
+    pmx.action('debug', (reply) => {
         reply(lobby.debugDump());
     });
 

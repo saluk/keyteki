@@ -4,7 +4,7 @@ class ScreamingCave extends Card {
     setupCardAbilities(ability) {
         this.action({
             effect: 'shuffle their hand and discard pile into their deck',
-            gameAction: ability.actions.returnToDeck(context => ({
+            gameAction: ability.actions.returnToDeck((context) => ({
                 shuffle: true,
                 target: context.player.hand.concat(context.player.discard)
             }))
@@ -12,6 +12,6 @@ class ScreamingCave extends Card {
     }
 }
 
-ScreamingCave.id = 'screaming-cave'; // This is a guess at what the id might be - please check it!!!
+ScreamingCave.id = 'screaming-cave';
 
 module.exports = ScreamingCave;

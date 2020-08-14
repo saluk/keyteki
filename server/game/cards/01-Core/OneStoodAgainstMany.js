@@ -9,32 +9,33 @@ class OneStoodAgainstMany extends Card {
                 cardType: 'creature',
                 controller: 'self',
                 gameAction: ability.actions.sequential([
-                    ability.actions.resolveFight(context => ({
+                    ability.actions.resolveFight((context) => ({
                         attacker: context.target,
                         promptForSelect: {
                             activePromptTitle: 'Choose a creature to fight',
                             cardType: 'creature',
                             controller: 'opponent'
                         },
-                        postHandler: (context, action) => this.chosenTargets = action.target
+                        postHandler: (context, action) => (this.chosenTargets = action.target)
                     })),
-                    ability.actions.resolveFight(context => ({
+                    ability.actions.resolveFight((context) => ({
                         attacker: context.target,
                         promptForSelect: {
                             activePromptTitle: 'Choose a creature to fight',
                             cardType: 'creature',
                             controller: 'opponent',
-                            cardCondition: card => !this.chosenTargets.includes(card)
+                            cardCondition: (card) => !this.chosenTargets.includes(card)
                         },
-                        postHandler: (context, action) => this.chosenTargets = this.chosenTargets.concat(action.target)
+                        postHandler: (context, action) =>
+                            (this.chosenTargets = this.chosenTargets.concat(action.target))
                     })),
-                    ability.actions.resolveFight(context => ({
+                    ability.actions.resolveFight((context) => ({
                         attacker: context.target,
                         promptForSelect: {
                             activePromptTitle: 'Choose a creature to fight',
                             cardType: 'creature',
                             controller: 'opponent',
-                            cardCondition: card => !this.chosenTargets.includes(card)
+                            cardCondition: (card) => !this.chosenTargets.includes(card)
                         }
                     }))
                 ])
@@ -43,6 +44,6 @@ class OneStoodAgainstMany extends Card {
     }
 }
 
-OneStoodAgainstMany.id = 'one-stood-against-many'; // This is a guess at what the id might be - please check it!!!
+OneStoodAgainstMany.id = 'one-stood-against-many';
 
 module.exports = OneStoodAgainstMany;

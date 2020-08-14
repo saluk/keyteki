@@ -5,11 +5,13 @@ class SpikeTrap extends Card {
         this.omni({
             gameAction: ability.actions.sacrifice(),
             then: {
-                message: '{0} sacrifice {1} and deal 3 damage to {3}',
-                messageArgs: context => [context.game.creaturesInPlay.filter(card => card.isOnFlank())],
-                gameAction: ability.actions.dealDamage(context => ({
+                message: '{0} uses {1} to deal 3 damage to {3}',
+                messageArgs: (context) => [
+                    context.game.creaturesInPlay.filter((card) => card.isOnFlank())
+                ],
+                gameAction: ability.actions.dealDamage((context) => ({
                     amount: 3,
-                    target: context.game.creaturesInPlay.filter(card => card.isOnFlank())
+                    target: context.game.creaturesInPlay.filter((card) => card.isOnFlank())
                 }))
             }
         });

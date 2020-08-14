@@ -6,13 +6,13 @@ class MasterOf1 extends Card {
             optional: true,
             target: {
                 cardType: 'creature',
-                cardCondition: card => card.power === 1,
+                cardCondition: (card) => card.power === 1,
                 gameAction: ability.actions.destroy()
             }
         });
     }
 }
 
-MasterOf1.id = 'master-of-1'; // This is a guess at what the id might be - please check it!!!
+MasterOf1.id = 'master-of-1';
 
 module.exports = MasterOf1;

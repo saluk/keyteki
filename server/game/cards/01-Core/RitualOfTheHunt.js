@@ -6,13 +6,15 @@ class RitualOfTheHunt extends Card {
             gameAction: [
                 ability.actions.sacrifice(),
                 ability.actions.forRemainderOfTurn({
-                    effect: ability.effects.canUse(card => card.hasHouse('untamed') && card.type === 'creature')
+                    effect: ability.effects.canUse(
+                        (card) => card.hasHouse('untamed') && card.type === 'creature'
+                    )
                 })
             ]
         });
     }
 }
 
-RitualOfTheHunt.id = 'ritual-of-the-hunt'; // This is a guess at what the id might be - please check it!!!
+RitualOfTheHunt.id = 'ritual-of-the-hunt';
 
 module.exports = RitualOfTheHunt;

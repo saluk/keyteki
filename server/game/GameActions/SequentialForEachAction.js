@@ -8,9 +8,10 @@ class SequentialForEachAction extends GameAction {
 
     setup() {
         super.setup();
-        if(!Array.isArray(this.forEach)) {
+        if (!Array.isArray(this.forEach)) {
             this.forEach = [this.forEach];
         }
+
         this.effectMsg = 'do several things';
     }
 
@@ -24,26 +25,33 @@ class SequentialForEachAction extends GameAction {
     }
 
     getEventArray(context) {
-        return [super.createEvent('unnamedEvent', {}, () => {
-            if(this.forEach.length > 0) {
-                for(let card of this.forEach) {
-                    let action = this.action;
-                    if(typeof action === 'function') {
-                        action = action(card);
+        return [
+            super.createEvent('unnamedEvent', {}, () => {
+                if (this.forEach.length > 0) {
+                    for (let element of this.forEach) {
+                        let action = this.action;
+                        if (typeof action === 'function') {
+                            action = action(element);
+                        }
+
+                        context.game.queueSimpleStep(() => {
+                            action.setDefaultTarget(() => element);
+                            action.preEventHandler(context);
+                        });
+                        context.game.queueSimpleStep(() =>
+                            context.game.openEventWindow(action.getEventArray(context))
+                        );
                     }
-                    context.game.queueSimpleStep(() => {
-                        action.setDefaultTarget(() => card);
-                        action.preEventHandler(context);
-                    });
-                    context.game.queueSimpleStep(() => context.game.openEventWindow(action.getEventArray(context)));
+                } else {
+                    for (let i = 0; i < this.num; i++) {
+                        context.game.queueSimpleStep(() => this.action.preEventHandler(context));
+                        context.game.queueSimpleStep(() =>
+                            context.game.openEventWindow(this.action.getEventArray(context))
+                        );
+                    }
                 }
-            } else {
-                for(let i = 0; i < this.num; i++) {
-                    context.game.queueSimpleStep(() => this.action.preEventHandler(context));
-                    context.game.queueSimpleStep(() => context.game.openEventWindow(this.action.getEventArray(context)));
-                }
-            }
-        })];
+            })
+        ];
     }
 }
 

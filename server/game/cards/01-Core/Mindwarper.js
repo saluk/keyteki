@@ -6,12 +6,14 @@ class Mindwarper extends Card {
             target: {
                 cardType: 'creature',
                 controller: 'opponent',
-                gameAction: ability.actions.capture({ ownController: true })
+                gameAction: ability.actions.capture((context) => ({
+                    player: context.player.opponent
+                }))
             }
         });
     }
 }
 
-Mindwarper.id = 'mindwarper'; // This is a guess at what the id might be - please check it!!!
+Mindwarper.id = 'mindwarper';
 
 module.exports = Mindwarper;

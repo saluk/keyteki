@@ -6,8 +6,10 @@ class DumaTheMartyr extends Card {
             effect: 'fully heal each other friendly creature and draw 2 cards',
             gameAction: [
                 ability.actions.draw({ amount: 2 }),
-                ability.actions.heal(context => ({
-                    target: context.player.creaturesInPlay.filter(card => card !== context.source),
+                ability.actions.heal((context) => ({
+                    target: context.player.creaturesInPlay.filter(
+                        (card) => card !== context.source
+                    ),
                     fully: true
                 }))
             ]
@@ -15,6 +17,6 @@ class DumaTheMartyr extends Card {
     }
 }
 
-DumaTheMartyr.id = 'duma-the-martyr'; // This is a guess at what the id might be - please check it!!!
+DumaTheMartyr.id = 'duma-the-martyr';
 
 module.exports = DumaTheMartyr;

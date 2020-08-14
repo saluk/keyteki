@@ -11,7 +11,7 @@ class PlayerPromptState {
         this.controls = [];
 
         this.selectableCards = [];
-        this.selectableRings = [];
+        this.cardDamage = {};
         this.selectedCards = [];
     }
 
@@ -34,13 +34,17 @@ class PlayerPromptState {
     setPrompt(prompt) {
         this.selectCard = prompt.selectCard || false;
         this.selectOrder = prompt.selectOrder || false;
+        this.cardDamage = prompt.cardDamage || {};
         this.menuTitle = prompt.menuTitle || '';
         this.promptTitle = prompt.promptTitle;
-        this.buttons = _.map(prompt.buttons || [], button => {
-            if(button.card) {
+        this.buttons = _.map(prompt.buttons || [], (button) => {
+            if (button.card) {
                 let card = button.card;
                 let properties = _.omit(button, 'card');
-                return _.extend({ text: card.name, arg: card.uuid, card: card.getShortSummary() }, properties);
+                return _.extend(
+                    { text: card.name, arg: card.uuid, card: card.getShortSummary() },
+                    properties
+                );
             }
 
             return button;
@@ -50,6 +54,7 @@ class PlayerPromptState {
 
     cancelPrompt() {
         this.selectCard = false;
+        this.cardDamage = {};
         this.menuTitle = '';
         this.buttons = [];
         this.controls = [];
@@ -57,28 +62,18 @@ class PlayerPromptState {
 
     getCardSelectionState(card) {
         let selectable = this.selectableCards.includes(card);
-        let index = _.indexOf(this.selectedCards, card);
-        let result = {
-            // The `card.selected` property here is a hack for plot selection,
-            // which we do differently from normal card selection.
-            selected: card.selected || (index !== -1),
+        let pseudoDamage = 0;
+        if (this.cardDamage[card.uuid]) {
+            pseudoDamage += this.cardDamage[card.uuid].damage || 0;
+            pseudoDamage += this.cardDamage[card.uuid].splash || 0;
+        }
+        return {
+            selected: this.selectedCards && this.selectedCards.includes(card),
             selectable: selectable,
-            unselectable: (this.selectCard && !selectable)
+            unselectable: !selectable && this.selectCard,
+            pseudoDamage: card.warded ? 0 : pseudoDamage,
+            wardBroken: pseudoDamage > 0 && card.warded
         };
-
-        if(index !== -1 && this.selectOrder) {
-            return _.extend({ order: index + 1 }, result);
-        }
-
-        return result;
-    }
-
-    getRingSelectionState(ring) {
-        if(this.selectRing) {
-            return { unselectable: !this.selectableRings.includes(ring) };
-        }
-        return { unselectable: ring.game.currentConflict && !ring.contested };
-
     }
 
     getState() {

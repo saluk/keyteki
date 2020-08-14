@@ -7,11 +7,12 @@ describe('The RadioButton component', () => {
     let wrapper;
 
     test('renders without crashing', () => {
-        shallow(<RadioButton />);
+        let ret = shallow(<RadioButton />);
+
+        expect(ret).not.toBeUndefined();
     });
 
     describe('when the selected property is set', () => {
-
         beforeEach(() => {
             wrapper = shallow(<RadioButton selected />);
         });
@@ -35,7 +36,7 @@ describe('The RadioButton component', () => {
         const onClick = jest.fn();
 
         beforeEach(() => {
-            wrapper = shallow(<RadioButton onClick={ onClick }/>);
+            wrapper = shallow(<RadioButton onClick={onClick} />);
 
             wrapper.find('input').simulate('click');
         });

@@ -5,14 +5,12 @@ class ChiefEngineerWalls extends Card {
         this.play({
             fight: true,
             reap: true,
+            optional: true,
             target: {
-                cardType: ['creature', 'upgrade'],
                 location: ['discard'],
                 controller: 'self',
-                cardCondition: (card => card.hasTrait('robot') || card.type === 'upgrade'),
-                gameAction: ability.actions.returnToHand(context => ({
-                    location: context.target.location
-                }))
+                cardCondition: (card) => card.hasTrait('robot') || card.type === 'upgrade',
+                gameAction: ability.actions.returnToHand({ location: 'discard' })
             }
         });
     }

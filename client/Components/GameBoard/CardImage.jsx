@@ -1,63 +1,107 @@
-import React, { Component, Fragment } from 'react';
-import PropTypes from 'prop-types';
+import React, { useEffect, useState } from 'react';
 import mergeImages from 'merge-images';
+import { useTranslation } from 'react-i18next';
 
-import { withTranslation } from 'react-i18next';
+import './CardImage.scss';
 
-class CardImage extends Component {
-    constructor() {
-        super();
-        this.state = { src: '', err: ''};
-    }
-    componentDidMount() {
-        this.updateImage();
-    }
+const EnhancementBaseImages = {};
 
-    componentDidUpdate(prevProps) {
-        if((this.props.img !== prevProps.img) || (this.props.language !== prevProps.language)) {
-            this.updateImage();
-        }
-    }
+import AmberImage from '../../assets/img/enhancements/amber.png';
+import CaptureImage from '../../assets/img/enhancements/capture.png';
+import DrawImage from '../../assets/img/enhancements/draw.png';
+import DamageImage from '../../assets/img/enhancements/damage.png';
 
-    updateImage() {
-        let { img, maverick, amber, i18n } = this.props;
-
-        let langToUse = this.props.language ? this.props.language : i18n.language;
-
-        let imgPath = (langToUse === 'en') ? img : img.replace('/cards/', '/cards/' + langToUse + '/');
-
-        if(maverick) {
-            let maverickHouseImg = '/img/maverick/maverick-' + maverick + (amber > 0 ? '-amber' : '') + '.png';
-
-            mergeImages([
-                imgPath,
-                { src: maverickHouseImg, x: 0, y: 0},
-                { src: '/img/maverick/maverick-corner.png', x: 210, y: 0}
-            ]).then(src => this.setState({ src }))
-                .catch(err => this.setState({ err: err.toString() }));
-        } else {
-            this.setState({src: imgPath});
-        }
-    }
-
-    render() {
-        return (
-            <Fragment>
-                <img src={ this.state.src } alt={ this.props.alt } className={ this.props.className } />
-                { this.state.err && <p>{ this.state.err } </p> }
-            </Fragment>
-        );
-    }
-}
-
-CardImage.propTypes = {
-    alt: PropTypes.string,
-    amber: PropTypes.number,
-    className: PropTypes.string,
-    i18n: PropTypes.object,
-    img: PropTypes.string.isRequired,
-    language: PropTypes.string,
-    maverick: PropTypes.string
+const EnhancementImages = {
+    amber: AmberImage,
+    capture: CaptureImage,
+    draw: DrawImage,
+    damage: DamageImage
 };
 
-export default withTranslation()(CardImage);
+for (let i = 1; i < 6; i++) {
+    EnhancementBaseImages[i] = require(`../../assets/img/enhancements/base-${i}.png`);
+}
+
+/**
+ * @typedef CardImageProps
+ * @property {object} card // The card data to render an image for
+ * @property {string} [cardBack] // The card back image to show if not showing the card image
+ */
+
+/**
+ *
+ * @param {CardImageProps} props
+ */
+const CardImage = ({ card, cardBack }) => {
+    const { i18n } = useTranslation();
+    let [mergedImage, setMergedImage] = useState('');
+    let { maverick, anomaly, amber, enhancements, image } = card;
+
+    if (card.cardPrintedAmber) {
+        amber = card.cardPrintedAmber;
+    }
+
+    useEffect(() => {
+        let imgPath = card.facedown
+            ? cardBack
+            : `/img/cards/${i18n.language === 'en' ? '' : i18n.language + '/'}${image}.png`;
+
+        let imagesToMerge = [];
+        if (maverick) {
+            let bonusIcons = amber > 0 || (enhancements && enhancements.length > 0);
+            let maverickHouseImg =
+                '/img/maverick/maverick-' + maverick + (bonusIcons ? '-amber' : '') + '.png';
+            imagesToMerge.push({ src: maverickHouseImg, x: 0, y: 0 });
+            imagesToMerge.push({ src: '/img/maverick/maverick-corner.png', x: 210, y: 0 });
+        }
+
+        if (anomaly) {
+            let maverickHouseImg =
+                '/img/maverick/maverick-' + anomaly + (amber > 0 ? '-amber' : '') + '.png';
+            imagesToMerge.push({ src: maverickHouseImg, x: 0, y: 0 });
+        }
+
+        if (enhancements && enhancements.length > 0 && enhancements[0] !== '') {
+            let y = 59 + (amber ? amber * 30 : 0);
+            imagesToMerge.push({
+                src: EnhancementBaseImages[enhancements.length],
+                x: 14,
+                y
+            });
+            enhancements.forEach((enhancement, index) => {
+                imagesToMerge.push({
+                    src: EnhancementImages[enhancement],
+                    x: 21,
+                    y: y + 10 + index * 31
+                });
+            });
+        }
+
+        if (imagesToMerge.length > 0) {
+            mergeImages([imgPath, ...imagesToMerge])
+                .then((src) => setMergedImage(src))
+                .catch(() => {});
+        } else {
+            setMergedImage(imgPath);
+        }
+    }, [
+        amber,
+        anomaly,
+        i18n.language,
+        maverick,
+        enhancements,
+        setMergedImage,
+        image,
+        cardBack,
+        card.facedown,
+        card
+    ]);
+
+    return (
+        <>
+            <img className='img-fluid' src={mergedImage} />
+        </>
+    );
+};
+
+export default CardImage;

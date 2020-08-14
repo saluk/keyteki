@@ -72,7 +72,6 @@ class ConflictTracker {
         this.resetForType('fire');
         this.resetForType('water');
         this.resetForType('void');
-
     }
 
     resetForType(conflictType) {
@@ -82,11 +81,11 @@ class ConflictTracker {
     }
 
     isAtMax(conflictType) {
-        if(!_.isUndefined(this.maxTotal) && this.complete >= this.maxTotal) {
+        if (!_.isUndefined(this.maxTotal) && this.complete >= this.maxTotal) {
             return true;
         }
 
-        if(this.conflictTypes[conflictType].cannotInitiate) {
+        if (this.conflictTypes[conflictType].cannotInitiate) {
             return true;
         }
 
@@ -122,9 +121,10 @@ class ConflictTracker {
     }
 
     perform(conflictType) {
-        if(this.conflictTypes[conflictType] !== undefined) {
+        if (this.conflictTypes[conflictType] !== undefined) {
             this.conflictTypes[conflictType].performed++;
         }
+
         this.complete++;
         this.usedConflictOpportunity();
     }

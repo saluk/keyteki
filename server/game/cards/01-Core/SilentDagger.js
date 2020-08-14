@@ -6,7 +6,7 @@ class SilentDagger extends Card {
             effect: ability.effects.gainAbility('reap', {
                 target: {
                     cardType: 'creature',
-                    cardCondition: card => card.isOnFlank(),
+                    cardCondition: (card) => card.isOnFlank(),
                     gameAction: ability.actions.dealDamage({ amount: 4 })
                 }
             })
@@ -14,6 +14,6 @@ class SilentDagger extends Card {
     }
 }
 
-SilentDagger.id = 'silent-dagger'; // This is a guess at what the id might be - please check it!!!
+SilentDagger.id = 'silent-dagger';
 
 module.exports = SilentDagger;

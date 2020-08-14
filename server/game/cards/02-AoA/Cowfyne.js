@@ -2,12 +2,9 @@ const Card = require('../../Card.js');
 
 class Cowfyne extends Card {
     setupCardAbilities(ability) {
-        this.interrupt({
-            when: {
-                onFight: (event, context) => event.attacker === context.source
-            },
+        this.beforeFight({
             effect: 'deal 2 damage to each neighbor of the creature being fought',
-            gameAction: ability.actions.dealDamage(context => ({
+            gameAction: ability.actions.dealDamage((context) => ({
                 amount: 2,
                 target: context.event.card.neighbors
             }))

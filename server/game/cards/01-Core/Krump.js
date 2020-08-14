@@ -4,13 +4,16 @@ class Krump extends Card {
     setupCardAbilities(ability) {
         this.reaction({
             when: {
-                onDamageDealt: (event, context) => event.damageSource === context.source && event.destroyed
+                onDamageDealt: (event, context) =>
+                    event.damageSource === context.source &&
+                    event.destroyEvent &&
+                    event.destroyEvent.resolved
             },
             gameAction: ability.actions.loseAmber()
         });
     }
 }
 
-Krump.id = 'krump'; // This is a guess at what the id might be - please check it!!!
+Krump.id = 'krump';
 
 module.exports = Krump;

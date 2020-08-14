@@ -8,8 +8,8 @@ class DestroyAction extends CardGameAction {
     }
 
     setDefaultProperties() {
-        this.inFight = false;
         this.purge = false;
+        this.damageEvent = null;
     }
 
     setup() {
@@ -17,25 +17,80 @@ class DestroyAction extends CardGameAction {
     }
 
     canAffect(card, context) {
-        return card.location === 'play area' && super.canAffect(card, context);
-    }
-
-    getEventArray(context) {
-        const componentEvents = super.getEventArray(context);
-        return componentEvents.concat(super.createEvent('unnamedEvent', { componentEvents, inFight: this.inFight }, event => {
-            const componentEvents = event.componentEvents.filter(event => !event.cancelled);
-            context.game.openEventWindow(componentEvents.map(componentEvent => super.createEvent('onCardDestroyed', { card: componentEvent.card, context: context, inFight: event.inFight }, event => {
-                componentEvent.destroyEvent = event;
-                context.game.raiseEvent('onCardLeavesPlay', { card: event.card, context: event.context }, event => {
-                    event.card.owner.moveCard(event.card, this.purge ? 'purged' : 'discard');
-                });
-            })));
-        }));
+        return !card.moribund && card.location === 'play area' && super.canAffect(card, context);
     }
 
     getEvent(card, context) {
-        return super.createEvent('onCardMarkedForDestruction', { card, context }, event => {
+        const params = {
+            card: card,
+            context: context,
+            damageEvent: this.damageEvent
+        };
+        return super.createEvent('onCardDestroyed', params, (event) => {
             event.card.moribund = true;
+
+            event.leavesPlayEvent = context.game.getEvent(
+                'onCardLeavesPlay',
+                {
+                    card: event.card,
+                    context: context,
+                    condition: (event) => event.card.location === 'play area',
+                    triggeringEvent: event,
+                    battlelineIndex: event.card.controller.creaturesInPlay.indexOf(event.card) - 1
+                },
+                (leavesPlayEvent) => {
+                    if (context.game.firstDestroyEvent === leavesPlayEvent) {
+                        context.game.firstDestroyEvent = null;
+                    } else if (
+                        !this.purge &&
+                        context.game.firstDestroyEvent &&
+                        !context.game.firstDestroyEvent.getChildEvents().includes(leavesPlayEvent)
+                    ) {
+                        let newDestroyEvent = super.createEvent(
+                            'unnamedEvent',
+                            {
+                                card: event.card,
+                                context: event.context,
+                                damageEvent: event.damageEvent
+                            },
+                            (newEvent) => (newEvent.name = 'onCardDestroyed')
+                        );
+                        context.game.firstDestroyEvent.addChildEvent(newDestroyEvent);
+                        context.game.firstDestroyEvent.addChildEvent(
+                            context.game.getEvent(
+                                'unnamedEvent',
+                                {
+                                    card: leavesPlayEvent.card,
+                                    context: leavesPlayEvent.context,
+                                    condition: (event) => event.card.location === 'play area',
+                                    triggeringEvent: newDestroyEvent,
+                                    battlelineIndex: leavesPlayEvent.battlelineIndex
+                                },
+                                (newEvent) => {
+                                    newEvent.name = 'onCardLeavesPlay';
+                                    newEvent.card.owner.moveCard(
+                                        event.card,
+                                        this.purge ? 'purged' : 'discard'
+                                    );
+                                }
+                            )
+                        );
+                        return;
+                    }
+
+                    leavesPlayEvent.card.owner.moveCard(
+                        event.card,
+                        this.purge ? 'purged' : 'discard'
+                    );
+                }
+            );
+
+            event.addSubEvent(event.leavesPlayEvent);
+            /*
+            if(!context.game.firstDestroyEvent || context.game.firstDestroyEvent.getSimultaneousEvents().every(e => e.cancelled || e.resolved)) {
+                context.game.firstDestroyEvent = event.leavesPlayEvent;
+            }
+            */
         });
     }
 }

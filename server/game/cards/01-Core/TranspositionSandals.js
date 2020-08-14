@@ -10,14 +10,14 @@ class TranspositionSandals extends Card {
                     gameAction: ability.actions.swap()
                 },
                 effect: 'swap its position with {0}. You may use {0} this turn',
-                gameAction: ability.actions.forRemainderOfTurn(abilityContext => ({
-                    effect: ability.effects.canUse(card => card === abilityContext.target)
+                gameAction: ability.actions.forRemainderOfTurn((abilityContext) => ({
+                    effect: ability.effects.canUse((card) => card === abilityContext.target)
                 }))
             })
         });
     }
 }
 
-TranspositionSandals.id = 'transposition-sandals'; // This is a guess at what the id might be - please check it!!!
+TranspositionSandals.id = 'transposition-sandals';
 
 module.exports = TranspositionSandals;

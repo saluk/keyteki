@@ -8,25 +8,18 @@ class OrbitalBombardment extends Card {
                 mode: 'unlimited',
                 controller: 'self',
                 location: 'hand',
-                cardCondition: card => card.hasHouse('mars'),
-                gameAction: ability.actions.sequentialForEach(context => ({
-                    num: context.target.length,
-                    action: ability.actions.dealDamage({
-                        noGameStateCheck: true,
-                        amount: 2,
-                        promptForSelect: {
-                            activePromptTitle: 'Choose a creature to deal 2 damage to',
-                            cardType: 'creature'
-                        }
-                    })
+                cardCondition: (card) => card.hasHouse('mars'),
+                gameAction: ability.actions.allocateDamage((context) => ({
+                    numSteps: context.target.length,
+                    damageStep: 2
                 }))
             },
-            effect: 'reveal {0} and to deal 2 damage to a creature {1} times',
-            effectArgs: context => context.target.length
+            effect: 'reveal {0} to deal 2 damage to a creature {1} times',
+            effectArgs: (context) => context.target.length
         });
     }
 }
 
-OrbitalBombardment.id = 'orbital-bombardment'; // This is a guess at what the id might be - please check it!!!
+OrbitalBombardment.id = 'orbital-bombardment';
 
 module.exports = OrbitalBombardment;

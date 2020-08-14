@@ -4,7 +4,7 @@ class PoisonWave extends Card {
     setupCardAbilities(ability) {
         this.play({
             effect: 'deal 2 damage to all creatures',
-            gameAction: ability.actions.dealDamage(context => ({
+            gameAction: ability.actions.dealDamage((context) => ({
                 amount: 2,
                 target: context.game.creaturesInPlay
             }))
@@ -12,6 +12,6 @@ class PoisonWave extends Card {
     }
 }
 
-PoisonWave.id = 'poison-wave'; // This is a guess at what the id might be - please check it!!!
+PoisonWave.id = 'poison-wave';
 
 module.exports = PoisonWave;

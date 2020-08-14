@@ -4,8 +4,8 @@ class CustomsOffice extends Card {
     setupCardAbilities(ability) {
         this.persistentEffect({
             targetController: 'opponent',
-            effect: ability.effects.additionalCost(context => {
-                if(context.source.type === 'artifact' && context.ability.isCardPlayed()) {
+            effect: ability.effects.additionalCost((context) => {
+                if (context.source.type === 'artifact' && context.ability.isCardPlayed()) {
                     return ability.costs.payAmber();
                 }
             })
@@ -13,6 +13,6 @@ class CustomsOffice extends Card {
     }
 }
 
-CustomsOffice.id = 'customs-office'; // This is a guess at what the id might be - please check it!!!
+CustomsOffice.id = 'customs-office';
 
 module.exports = CustomsOffice;

@@ -4,7 +4,7 @@ class AmmoniaClouds extends Card {
     setupCardAbilities(ability) {
         this.play({
             effect: 'deal 3 damage to all creatures',
-            gameAction: ability.actions.dealDamage(context => ({
+            gameAction: ability.actions.dealDamage((context) => ({
                 amount: 3,
                 target: context.game.creaturesInPlay
             }))
@@ -12,6 +12,6 @@ class AmmoniaClouds extends Card {
     }
 }
 
-AmmoniaClouds.id = 'ammonia-clouds'; // This is a guess at what the id might be - please check it!!!
+AmmoniaClouds.id = 'ammonia-clouds';
 
 module.exports = AmmoniaClouds;

@@ -5,14 +5,14 @@ class PiranhaMonkeys extends Card {
         this.play({
             reap: true,
             effect: 'deal 2 damage to each other creature',
-            gameAction: ability.actions.dealDamage(context => ({
+            gameAction: ability.actions.dealDamage((context) => ({
                 amount: 2,
-                target: context.game.creaturesInPlay.filter(card => card !== context.source)
+                target: context.game.creaturesInPlay.filter((card) => card !== context.source)
             }))
         });
     }
 }
 
-PiranhaMonkeys.id = 'piranha-monkeys'; // This is a guess at what the id might be - please check it!!!
+PiranhaMonkeys.id = 'piranha-monkeys';
 
 module.exports = PiranhaMonkeys;

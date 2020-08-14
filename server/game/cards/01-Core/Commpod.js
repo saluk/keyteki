@@ -8,8 +8,8 @@ class Commpod extends Card {
                 mode: 'unlimited',
                 controller: 'self',
                 location: 'hand',
-                cardCondition: card => card.hasHouse('mars'),
-                gameAction: ability.actions.sequentialForEach(context => ({
+                cardCondition: (card) => card.hasHouse('mars'),
+                gameAction: ability.actions.sequentialForEach((context) => ({
                     num: context.target.length,
                     action: ability.actions.ready({
                         promptForSelect: {
@@ -21,11 +21,11 @@ class Commpod extends Card {
                 }))
             },
             effect: 'reveal {0} and to ready a creature {1} times',
-            effectArgs: context => context.target.length
+            effectArgs: (context) => context.target.length
         });
     }
 }
 
-Commpod.id = 'commpod'; // This is a guess at what the id might be - please check it!!!
+Commpod.id = 'commpod';
 
 module.exports = Commpod;

@@ -3,7 +3,7 @@ const Card = require('../../Card.js');
 class MackTheKnife extends Card {
     setupCardAbilities(ability) {
         this.persistentEffect({
-            effect: ability.effects.canUse(card => card === this)
+            effect: ability.effects.canUse((card) => card === this)
         });
 
         this.action({
@@ -12,13 +12,14 @@ class MackTheKnife extends Card {
                 gameAction: ability.actions.dealDamage()
             },
             then: {
-                condition: context => context.preThenEvent.destroyed,
+                condition: (context) =>
+                    context.preThenEvent.destroyEvent && context.preThenEvent.destroyEvent.resolved,
                 gameAction: ability.actions.gainAmber()
             }
         });
     }
 }
 
-MackTheKnife.id = 'mack-the-knife'; // This is a guess at what the id might be - please check it!!!
+MackTheKnife.id = 'mack-the-knife';
 
 module.exports = MackTheKnife;

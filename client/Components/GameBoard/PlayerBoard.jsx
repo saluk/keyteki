@@ -4,6 +4,8 @@ import classNames from 'classnames';
 
 import Card from './Card';
 
+import './PlayerBoard.scss';
+
 class PlayerBoard extends React.Component {
     getCardRows() {
         let groupedCards = this.props.cardsInPlay.reduce((group, card) => {
@@ -17,12 +19,14 @@ class PlayerBoard extends React.Component {
         let characters = groupedCards['creature'] || [];
         let other = [];
 
-        for(let key of Object.keys(groupedCards).filter(k => !['artifact', 'creature'].includes(k))) {
+        for (let key of Object.keys(groupedCards).filter(
+            (k) => !['artifact', 'creature'].includes(k)
+        )) {
             other = other.concat(groupedCards[key]);
         }
 
-        if(this.props.rowDirection === 'reverse') {
-            if(other.length > 0) {
+        if (this.props.rowDirection === 'reverse') {
+            if (other.length > 0) {
                 rows.push(other);
             }
 
@@ -31,7 +35,7 @@ class PlayerBoard extends React.Component {
         } else {
             rows.push(characters);
             rows.push(locations);
-            if(other.length > 0) {
+            if (other.length > 0) {
                 rows.push(other);
             }
         }
@@ -41,26 +45,28 @@ class PlayerBoard extends React.Component {
 
     renderRows(rows) {
         return rows.map((row, index) => (
-            <div className='card-row' key={ `card-row-${index}` }>
-                { this.renderRow(row) }
+            <div className='card-row' key={`card-row-${index}`}>
+                {this.renderRow(row)}
             </div>
         ));
     }
 
     renderRow(row) {
-        return row.map(card => (
+        return row.map((card) => (
             <Card
-                key={ card.uuid }
-                canDrag={ this.props.manualMode }
-                card={ card }
-                disableMouseOver={ card.facedown && !card.code }
-                onClick={ this.props.onCardClick }
-                onMenuItemClick={ this.props.onMenuItemClick }
-                onMouseOut={ this.props.onMouseOut }
-                onMouseOver={ this.props.onMouseOver }
-                size={ this.props.user.settings.cardSize }
-                source='play area' />)
-        );
+                key={card.uuid}
+                cardBackUrl={this.props.cardBackUrl}
+                canDrag={this.props.manualMode}
+                card={card}
+                disableMouseOver={card.facedown && !card.code}
+                onClick={this.props.onCardClick}
+                onMenuItemClick={this.props.onMenuItemClick}
+                onMouseOut={this.props.onMouseOut}
+                onMouseOver={this.props.onMouseOver}
+                size={this.props.user.settings.cardSize}
+                source='play area'
+            />
+        ));
     }
 
     render() {
@@ -70,15 +76,13 @@ class PlayerBoard extends React.Component {
             'our-side': this.props.rowDirection === 'default'
         });
 
-        return (
-            <div className={ className } >
-                { this.renderRows(rows) }
-            </div>);
+        return <div className={className}>{this.renderRows(rows)}</div>;
     }
 }
 
 PlayerBoard.displayName = 'PlayerBoard';
 PlayerBoard.propTypes = {
+    cardBackUrl: PropTypes.string,
     cardsInPlay: PropTypes.array,
     manualMode: PropTypes.bool,
     onCardClick: PropTypes.func,

@@ -5,8 +5,8 @@ class PhosphorusStars extends Card {
         this.play({
             effect: 'stun each non-Mars creature and gain 2 chains',
             gameAction: [
-                ability.actions.stun(context => ({
-                    target: context.game.creaturesInPlay.filter(card => !card.hasHouse('mars'))
+                ability.actions.stun((context) => ({
+                    target: context.game.creaturesInPlay.filter((card) => !card.hasHouse('mars'))
                 })),
                 ability.actions.gainChains({ amount: 2 })
             ]
@@ -14,6 +14,6 @@ class PhosphorusStars extends Card {
     }
 }
 
-PhosphorusStars.id = 'phosphorus-stars'; // This is a guess at what the id might be - please check it!!!
+PhosphorusStars.id = 'phosphorus-stars';
 
 module.exports = PhosphorusStars;

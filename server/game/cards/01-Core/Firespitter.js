@@ -2,14 +2,13 @@ const Card = require('../../Card.js');
 
 class Firespitter extends Card {
     setupCardAbilities(ability) {
-        this.interrupt({
-            when: {
-                onFight: (event, context) => event.attacker === context.source
-            },
+        this.beforeFight({
             effect: 'deal 1 damage to each enemy creature',
-            gameAction: ability.actions.dealDamage(context => ({
+            gameAction: ability.actions.dealDamage((context) => ({
                 amount: 1,
-                target: context.game.creaturesInPlay.filter(card => card.controller !== context.player)
+                target: context.game.creaturesInPlay.filter(
+                    (card) => card.controller !== context.player
+                )
             }))
         });
     }

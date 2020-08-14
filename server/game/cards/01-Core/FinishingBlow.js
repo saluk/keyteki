@@ -5,16 +5,18 @@ class FinishingBlow extends Card {
         this.play({
             target: {
                 cardType: 'creature',
-                cardCondition: card => card.hasToken('damage'),
+                cardCondition: (card) => card.hasToken('damage'),
                 gameAction: ability.actions.destroy()
             },
             then: {
+                message: '{0} uses {1} to steal 1 amber from {3}',
+                messageArgs: (context) => [context.player.opponent],
                 gameAction: ability.actions.steal()
             }
         });
     }
 }
 
-FinishingBlow.id = 'finishing-blow'; // This is a guess at what the id might be - please check it!!!
+FinishingBlow.id = 'finishing-blow';
 
 module.exports = FinishingBlow;

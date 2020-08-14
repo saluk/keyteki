@@ -2,9 +2,13 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import { DragSource } from 'react-dnd';
 import $ from 'jquery';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faTimes } from '@fortawesome/free-solid-svg-icons';
 
 import { ItemTypes } from '../../constants';
 import PopupDefaults from './PopupDefaults';
+
+import './MovablePanel.scss';
 
 const panelSource = {
     beginDrag(props) {
@@ -46,21 +50,22 @@ class MovablePanel extends React.Component {
         };
     }
 
-    componentWillReceiveProps(props) {
-        if(props.isDragging) {
+    // eslint-disable-next-line camelcase
+    UNSAFE_componentWillReceiveProps(props) {
+        if (props.isDragging) {
             let style = {
                 position: 'fixed',
                 left: Math.max(props.dragOffset.x, 0),
                 top: Math.max(props.dragOffset.y, 50)
             };
 
-            const popup = $(this.refs.popup);
+            const popup = $(this.popup);
 
-            if(style.left + popup.width() > window.innerWidth) {
+            if (style.left + popup.width() > window.innerWidth) {
                 style.left = window.innerWidth - popup.width();
             }
 
-            if(style.top + popup.height() > window.innerHeight) {
+            if (style.top + popup.height() > window.innerHeight) {
                 style.top = window.innerHeight - popup.height();
             }
 
@@ -73,18 +78,21 @@ class MovablePanel extends React.Component {
     render() {
         let style = this.state.position;
 
-        let content = (<div ref='popup' className='panel panel-primary' style={ style }>
-            {
-                this.props.connectDragSource(
-                    <div className='panel-heading' onClick={ event => event.stopPropagation() }>
-                        <span className='text-center'>{ this.props.title }</span>
-                        <span className='pull-right'>
-                            <a className='close-button glyphicon glyphicon-remove' onClick={ this.props.onCloseClick } />
+        let content = (
+            <div ref={(p) => (this.popup = p)} className='panel panel-primary' style={style}>
+                {this.props.connectDragSource(
+                    <div className='panel-heading' onClick={(event) => event.stopPropagation()}>
+                        <span className='text-center'>{this.props.title}</span>
+                        <span className='float-right'>
+                            <a className='close-button' onClick={this.props.onCloseClick}>
+                                <FontAwesomeIcon icon={faTimes} />
+                            </a>
                         </span>
-                    </div>)
-            }
-            { this.props.children }
-        </div >);
+                    </div>
+                )}
+                {this.props.children}
+            </div>
+        );
 
         return content;
     }

@@ -5,8 +5,10 @@ class RockhurlingGiant extends Card {
         this.reaction({
             when: {
                 onCardDiscarded: (event, context) =>
-                    event.location === 'hand' && event.card.controller === context.player &&
-                    context.game.activePlayer === context.player && event.card.hasHouse('brobnar')
+                    event.location === 'hand' &&
+                    event.card.controller === context.player &&
+                    context.game.activePlayer === context.player &&
+                    event.card.hasHouse('brobnar')
             },
             optional: true,
             target: {
@@ -17,6 +19,6 @@ class RockhurlingGiant extends Card {
     }
 }
 
-RockhurlingGiant.id = 'rock-hurling-giant'; // This is a guess at what the id might be - please check it!!!
+RockhurlingGiant.id = 'rock-hurling-giant';
 
 module.exports = RockhurlingGiant;

@@ -5,12 +5,16 @@ class EeOnTheFringes extends Card {
         this.reaction({
             when: {
                 onCardDiscarded: (event, context) =>
-                    event.location === 'hand' && event.card.controller === context.player &&
-                    context.game.activePlayer === context.player && event.card.hasHouse('dis')
+                    event.location === 'hand' &&
+                    event.card.controller === context.player &&
+                    context.game.activePlayer === context.player &&
+                    event.card.hasHouse('dis')
             },
             target: {
                 location: 'discard',
-                cardCondition: card => card.hasHouse('dis'),
+                mode: 'upTo',
+                numCards: 1,
+                cardCondition: (card) => card.hasHouse('dis'),
                 gameAction: ability.actions.purge({ location: 'discard' })
             },
             then: () => ({

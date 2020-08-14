@@ -5,10 +5,12 @@ class EffervescentPrinciple extends Card {
         this.play({
             effect: 'gain a chain and make both players lose half their amber',
             gameAction: [
-                ability.actions.loseAmber(context => ({
-                    amount: context.player.opponent ? Math.floor(context.player.opponent.amber / 2) : 0
+                ability.actions.loseAmber((context) => ({
+                    amount: context.player.opponent
+                        ? Math.floor(context.player.opponent.amber / 2)
+                        : 0
                 })),
-                ability.actions.loseAmber(context => ({
+                ability.actions.loseAmber((context) => ({
                     target: context.player,
                     amount: Math.floor(context.player.amber / 2)
                 })),
@@ -18,6 +20,6 @@ class EffervescentPrinciple extends Card {
     }
 }
 
-EffervescentPrinciple.id = 'effervescent-principle'; // This is a guess at what the id might be - please check it!!!
+EffervescentPrinciple.id = 'effervescent-principle';
 
 module.exports = EffervescentPrinciple;

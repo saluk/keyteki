@@ -3,6 +3,8 @@ const Card = require('../../Card.js');
 class GreyMonk extends Card {
     setupCardAbilities(ability) {
         this.persistentEffect({
+            targetController: 'current',
+            match: () => true,
             effect: ability.effects.modifyArmor(1)
         });
         this.reap({
@@ -14,6 +16,6 @@ class GreyMonk extends Card {
     }
 }
 
-GreyMonk.id = 'grey-monk'; // This is a guess at what the id might be - please check it!!!
+GreyMonk.id = 'grey-monk';
 
 module.exports = GreyMonk;

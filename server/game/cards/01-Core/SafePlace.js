@@ -3,7 +3,7 @@ const Card = require('../../Card.js');
 class SafePlace extends Card {
     setupCardAbilities(ability) {
         this.persistentEffect({
-            effect: ability.effects.keyAmber(this)
+            effect: ability.effects.keyAmber()
         });
 
         this.action({

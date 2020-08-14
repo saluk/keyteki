@@ -1,7 +1,11 @@
-const AbilityTargetAbility = require('./AbilityTargets/AbilityTargetAbility.js');
-const AbilityTargetCard = require('./AbilityTargets/AbilityTargetCard.js');
-const AbilityTargetHouse = require('./AbilityTargets/AbilityTargetHouse.js');
-const AbilityTargetSelect = require('./AbilityTargets/AbilityTargetSelect.js');
+const AbilityTargetAbility = require('./AbilityTargets/AbilityTargetAbility');
+const AbilityTargetCard = require('./AbilityTargets/AbilityTargetCard');
+const AbilityTargetHouse = require('./AbilityTargets/AbilityTargetHouse');
+const AbilityTargetSelect = require('./AbilityTargets/AbilityTargetSelect');
+const AbilityTargetTrait = require('./AbilityTargets/AbilityTargetTrait');
+const AbilityTargetOptions = require('./AbilityTargets/AbilityTargetOptions');
+const AbilityTargetCardName = require('./AbilityTargets/AbilityTargetCardName');
+
 /**
  * Base class representing an ability that can be done by the player. This
  * includes card actions, reactions, interrupts, playing a card, marshaling a
@@ -28,20 +32,21 @@ class BaseAbility {
         this.gameAction = properties.gameAction || [];
         this.abilityType = '';
         this.printedAbility = false;
-        if(!Array.isArray(this.gameAction)) {
+        if (!Array.isArray(this.gameAction)) {
             this.gameAction = [this.gameAction];
         }
+
         this.buildTargets(properties);
         this.cost = this.buildCost(properties.cost);
-        this.nonDependentTargets = this.targets.filter(target => !target.properties.dependsOn);
+        this.nonDependentTargets = this.targets.filter((target) => !target.properties.dependsOn);
     }
 
     buildCost(cost) {
-        if(!cost) {
+        if (!cost) {
             return [];
         }
 
-        if(!Array.isArray(cost)) {
+        if (!Array.isArray(cost)) {
             return [cost];
         }
 
@@ -50,30 +55,38 @@ class BaseAbility {
 
     buildTargets(properties) {
         this.targets = [];
-        if(properties.target) {
+        if (properties.target) {
             this.targets.push(this.getAbilityTarget('target', properties.target));
-        } else if(properties.targets) {
-            for(const key of Object.keys(properties.targets)) {
+        } else if (properties.targets) {
+            for (const key of Object.keys(properties.targets)) {
                 this.targets.push(this.getAbilityTarget(key, properties.targets[key]));
             }
         }
     }
 
     getAbilityTarget(name, properties) {
-        if(properties.gameAction) {
-            if(!Array.isArray(properties.gameAction)) {
+        if (properties.gameAction) {
+            if (!Array.isArray(properties.gameAction)) {
                 properties.gameAction = [properties.gameAction];
             }
         } else {
             properties.gameAction = [];
         }
-        if(properties.mode === 'select') {
+
+        if (properties.mode === 'select') {
             return new AbilityTargetSelect(name, properties, this);
-        } else if(properties.mode === 'house') {
+        } else if (properties.mode === 'house') {
             return new AbilityTargetHouse(name, properties, this);
-        } else if(properties.mode === 'ability') {
+        } else if (properties.mode === 'ability') {
             return new AbilityTargetAbility(name, properties, this);
+        } else if (properties.mode === 'trait') {
+            return new AbilityTargetTrait(name, properties, this);
+        } else if (properties.mode === 'card-name') {
+            return new AbilityTargetCardName(name, properties, this);
+        } else if (properties.mode === 'options') {
+            return new AbilityTargetOptions(name, properties, this);
         }
+
         return new AbilityTargetCard(name, properties, this);
     }
 
@@ -85,21 +98,30 @@ class BaseAbility {
         // check legal targets exist
         // check costs can be paid
         // check for potential to change game state
-        for(let target of this.targets) {
+        for (let target of this.targets) {
             target.resetGameActions();
         }
-        for(let action of this.gameAction) {
+
+        for (let action of this.gameAction) {
             action.reset();
         }
-        if(!this.canPayCosts(context)) {
+
+        if (!this.canPayCosts(context)) {
             return 'cost';
-        } else if(this.checkThenAbilities() || this.printedAbility && this.abilityType === 'action') {
+        } else if (
+            this.checkThenAbilities() ||
+            (this.printedAbility && this.abilityType === 'action')
+        ) {
             return '';
-        } else if(this.gameAction.length > 0 && this.gameAction.some(gameAction => gameAction.hasLegalTarget(context))) {
+        } else if (
+            this.gameAction.length > 0 &&
+            this.gameAction.some((gameAction) => gameAction.hasLegalTarget(context))
+        ) {
             return '';
-        } else if(this.targets.length > 0) {
+        } else if (this.targets.length > 0) {
             return this.canResolveTargets(context) ? '' : 'target';
         }
+
         return this.gameAction.length > 0 ? 'condition' : '';
     }
 
@@ -114,7 +136,7 @@ class BaseAbility {
      */
     canPayCosts(context) {
         let cost = this.cost.concat(context.player.getAdditionalCosts(context));
-        return cost.every(cost => cost.canPay(context));
+        return cost.every((cost) => cost.canPay(context));
     }
 
     /**
@@ -122,7 +144,7 @@ class BaseAbility {
      */
     payCosts(context) {
         let cost = this.cost.concat(context.player.getAdditionalCosts(context));
-        return cost.map(cost => cost.payEvent(context));
+        return cost.map((cost) => cost.payEvent(context));
     }
 
     /**
@@ -131,7 +153,7 @@ class BaseAbility {
      * @returns {Boolean}
      */
     canResolveTargets(context) {
-        return this.nonDependentTargets.some(target => target.canResolve(context));
+        return this.nonDependentTargets.some((target) => target.canResolve(context));
     }
 
     /**
@@ -143,41 +165,42 @@ class BaseAbility {
             payCostsFirst: false,
             delayTargeting: null
         };
-        for(let target of this.targets) {
+        for (let target of this.targets) {
             context.game.queueSimpleStep(() => {
-                if(target.hasLegalTarget(context)) {
+                if (target.hasLegalTarget(context)) {
                     target.resolve(context, targetResults);
                 }
             });
         }
+
         return targetResults;
     }
 
     resolveRemainingTargets(context, nextTarget) {
         let index = this.targets.indexOf(nextTarget);
-        for(let target of this.targets.slice(index)) {
+        for (let target of this.targets.slice(index)) {
             context.game.queueSimpleStep(() => target.resolve(context, {}));
         }
     }
 
     hasLegalTargets(context) {
-        return this.nonDependentTargets.every(target => target.hasLegalTarget(context));
+        return this.nonDependentTargets.every((target) => target.hasLegalTarget(context));
     }
 
     checkAllTargets(context) {
-        return this.nonDependentTargets.every(target => target.checkTarget(context));
+        return this.nonDependentTargets.every((target) => target.checkTarget(context));
     }
 
-    displayMessage(context) { // eslint-disable-line no-unused-vars
-    }
+    // eslint-disable-next-line no-unused-vars
+    displayMessage(context) {}
 
     /**
      * Executes the ability once all costs have been paid. Inheriting classes
      * should override this method to implement their behavior; by default it
      * does nothing.
      */
-    executeHandler(context) { // eslint-disable-line no-unused-vars
-    }
+    // eslint-disable-next-line no-unused-vars
+    executeHandler(context) {}
 
     isAction() {
         return false;

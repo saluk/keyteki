@@ -6,14 +6,18 @@ class Squawker extends Card {
             target: {
                 cardType: 'creature',
                 gameAction: [
-                    ability.actions.ready(context => ({ target: context.target.hasHouse('mars') ? context.target : [] })),
-                    ability.actions.stun(context => ({ target: !context.target.hasHouse('mars') ? context.target : [] }))
+                    ability.actions.ready((context) => ({
+                        target: context.target.hasHouse('mars') ? context.target : []
+                    })),
+                    ability.actions.stun((context) => ({
+                        target: !context.target.hasHouse('mars') ? context.target : []
+                    }))
                 ]
             }
         });
     }
 }
 
-Squawker.id = 'squawker'; // This is a guess at what the id might be - please check it!!!
+Squawker.id = 'squawker';
 
 module.exports = Squawker;

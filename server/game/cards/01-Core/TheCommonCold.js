@@ -4,20 +4,20 @@ class TheCommonCold extends Card {
     setupCardAbilities(ability) {
         this.play({
             effect: 'deal 1 damage to all creatures',
-            gameAction: ability.actions.dealDamage(context => ({
+            gameAction: ability.actions.dealDamage((context) => ({
                 amount: 1,
                 target: context.game.creaturesInPlay
             })),
             then: {
                 may: 'destroy all Mars creatures',
-                gameAction: ability.actions.destroy(context => ({
-                    target: context.game.creaturesInPlay.filter(card => card.hasHouse('mars'))
+                gameAction: ability.actions.destroy((context) => ({
+                    target: context.game.creaturesInPlay.filter((card) => card.hasHouse('mars'))
                 }))
             }
         });
     }
 }
 
-TheCommonCold.id = 'the-common-cold'; // This is a guess at what the id might be - please check it!!!
+TheCommonCold.id = 'the-common-cold';
 
 module.exports = TheCommonCold;
