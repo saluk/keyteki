@@ -1,5 +1,6 @@
 const _ = require('underscore');
 const util = require('util');
+const logger = require('../log');
 
 const Player = require('./player.js');
 
@@ -22,6 +23,11 @@ class BotPlayer extends Player {
 
     speak(...args) {
         this.game.gameChat.addMessage('{0}: {1}', this, args);
+        logger.debug(
+            util.inspect(
+                this.game.gameChat.messages[this.game.gameChat.messages.length - 1].message
+            )
+        );
     }
 
     speakDebug(...objects) {
@@ -37,7 +43,7 @@ class BotPlayer extends Player {
             );
         });
         s = inspected.join(', ');
-        console.log(s);
+        logger.debug(s);
         //this.speak(s);
     }
 
