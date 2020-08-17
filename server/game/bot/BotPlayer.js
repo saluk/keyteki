@@ -1,12 +1,12 @@
 const _ = require('underscore');
 const util = require('util');
-const logger = require('../log');
+const logger = require('../../log');
 
-const Player = require('./player.js');
+const Player = require('../player.js');
 
 // For the bot to interact
-const PlayerInteractionWrapper = require('../../test/helpers/playerinteractionwrapper.js');
-const BasePlayAction = require('./BaseActions/BasePlayAction');
+const PlayerInteractionWrapper = require('../../../test/helpers/playerinteractionwrapper.js');
+const BasePlayAction = require('../BaseActions/BasePlayAction');
 
 class BotPlayer extends Player {
     drawCardsToHand(numCards) {
@@ -43,7 +43,7 @@ class BotPlayer extends Player {
             );
         });
         s = inspected.join(', ');
-        logger.debug(s);
+        logger.info(s);
         //this.speak(s);
     }
 
@@ -51,6 +51,7 @@ class BotPlayer extends Player {
         this.speakDebug('  ---   THINKING ---  ');
         this.speakDebug(this.game.pipeline.getCurrentStep());
         if (
+            this.game.pipeline.getCurrentStep() &&
             _.contains(['main', 'key', 'house', 'draw'], this.game.pipeline.getCurrentStep().name)
         ) {
             if (this.game.activePlayer != this) {
@@ -66,7 +67,7 @@ class BotPlayer extends Player {
 
     handlePrompt(interactor) {
         this.speakDebug(this.currentPrompt());
-        if (interactor.currentPrompt().menuTitle.includes('Waiting')) {
+        if (!interactor.canAct) {
             return false;
         }
 
@@ -104,7 +105,16 @@ class BotPlayer extends Player {
         } else if (interactor.hasPrompt('End Turn')) {
             this.speak('Ending the turn');
             interactor.clickPrompt('Yes');
-        } else if (this.promptState.base && this.promptState.base.properties.botEffect) {
+        } else if (
+            this.promptState.menuTitle.text &&
+            this.promptState.menuTitle.text.search('enable manual mode') > -1
+        ) {
+            interactor.clickPrompt('Yes');
+        } else if (
+            this.promptState.base &&
+            this.promptState.base.properties &&
+            this.promptState.base.properties.botEffect
+        ) {
             this.speak('Thinking about what to do');
             this.botEvaluateEffect(interactor, this.promptState.base.properties.botEffect);
         } else {
@@ -138,8 +148,14 @@ class BotPlayer extends Player {
             this.speak('I see ' + house[1] + ' cards of house ' + house[0]);
         }
         this.speak('I choose ' + houses[0][0]);
-        interactor.clickPrompt(houses[0][0]);
+        try {
+            interactor.clickPrompt(houses[0][0]);
+        } catch {
+            return this.botRandomChoice(interactor);
+        }
         this.speak('Cards in my hand:', this.hand);
+        console.log('chose house');
+        console.log(interactor.currentPrompt());
     }
 
     botPlayPhase(interactor) {

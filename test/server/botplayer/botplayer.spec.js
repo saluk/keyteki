@@ -24,6 +24,7 @@ describe('Bot player', function () {
             this.player2.play(this.mightyTiger);
             this.player2.play(this.snufflegator);
             this.player2.play(this.inkaTheSpider);
+            this.player2.clickCard(this.mightyTiger);
             this.player2.endTurn();
             this.player1.clickPrompt('Dis');
             this.player1.endTurn();
