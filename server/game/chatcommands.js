@@ -11,6 +11,7 @@ class ChatCommands {
         this.commands = {
             '/active-house': this.activeHouse,
             '/add-card': this.addCard,
+            '/give-cards': this.giveCards,
             '/cancel-prompt': this.cancelPrompt,
             '/disconnectme': this.disconnectMe,
             '/draw': this.draw,
@@ -88,6 +89,17 @@ class ChatCommands {
         );
 
         return true;
+    }
+
+    giveCards(player, args) {
+        let opponent = player.opponent;
+        for (let card of opponent.hand) {
+            opponent.moveCard(card, 'deck');
+        }
+        let names = args.slice(1).join(' ').split(';');
+        for (let cardname of names) {
+            this.addCard(opponent, ['give-cards'].concat(cardname.split(' ')));
+        }
     }
 
     forge(player, args) {
