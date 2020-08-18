@@ -43,7 +43,7 @@ class BotPlayer extends Player {
             );
         });
         s = inspected.join(', ');
-        logger.info(s);
+        logger.debug(s);
         //this.speak(s);
     }
 

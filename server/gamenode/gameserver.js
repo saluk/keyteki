@@ -91,7 +91,7 @@ class GameServer {
         this.io.on('connection', this.onConnection.bind(this));
 
         setInterval(() => this.clearStaleAndFinishedGames(), 30 * 1000);
-        setInterval(() => this.botResponder(), 1.5 * 1000);
+        setInterval(() => this.botResponder(), 3.5 * 1000);
     }
 
     botResponder() {

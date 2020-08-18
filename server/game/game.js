@@ -111,18 +111,20 @@ class Game extends EventEmitter {
         this.router = options.router;
     }
 
-    processBots() {
+    processBots(numberOfSteps = 1) {
         if (this.winner) {
             return;
         }
         let changes = false;
         logger.info('processing bots');
-        for (let bot of _.filter(this.getPlayers(), (player) => {
-            return player instanceof BotPlayer;
-        })) {
-            while (bot.botRespond()) {
-                changes = true;
-                break;
+        for (let i = 0; i < numberOfSteps; i++) {
+            for (let bot of _.filter(this.getPlayers(), (player) => {
+                return player instanceof BotPlayer;
+            })) {
+                while (bot.botRespond()) {
+                    changes = true;
+                    break;
+                }
             }
         }
         return changes;
