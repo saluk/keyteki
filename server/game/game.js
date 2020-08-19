@@ -116,7 +116,6 @@ class Game extends EventEmitter {
             return;
         }
         let changes = false;
-        logger.info('processing bots');
         for (let i = 0; i < numberOfSteps; i++) {
             for (let bot of _.filter(this.getPlayers(), (player) => {
                 return player instanceof BotPlayer;
@@ -131,9 +130,9 @@ class Game extends EventEmitter {
     }
 
     simulate() {
+        logger.info('running simulation');
         while (!this.winner) {
             this.processBots();
-            logger.info('running simulation');
         }
         logger.info('done');
         return true;

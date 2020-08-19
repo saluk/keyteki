@@ -9,6 +9,11 @@ const PlayerInteractionWrapper = require('../../../test/helpers/playerinteractio
 const BasePlayAction = require('../BaseActions/BasePlayAction');
 
 class BotPlayer extends Player {
+    constructor(...args) {
+        super(...args);
+        this.playMethod = 'Random';
+    }
+
     drawCardsToHand(numCards) {
         super.drawCardsToHand(numCards);
 
@@ -23,11 +28,11 @@ class BotPlayer extends Player {
 
     speak(...args) {
         this.game.gameChat.addMessage('{0}: {1}', this, args);
-        logger.debug(
+        /*logger.debug(
             util.inspect(
                 this.game.gameChat.messages[this.game.gameChat.messages.length - 1].message
             )
-        );
+        );*/
     }
 
     speakDebug(...objects) {
@@ -43,7 +48,7 @@ class BotPlayer extends Player {
             );
         });
         s = inspected.join(', ');
-        logger.debug(s);
+        //logger.debug(s);
         //this.speak(s);
     }
 
@@ -154,11 +159,33 @@ class BotPlayer extends Player {
             return this.botRandomChoice(interactor);
         }
         this.speak('Cards in my hand:', this.hand);
-        console.log('chose house');
-        console.log(interactor.currentPrompt());
     }
 
     botPlayPhase(interactor) {
+        this['botPlayPhase' + this.playMethod](interactor);
+    }
+
+    botPlayPhaseRandom(interactor) {
+        let remainingActions = [];
+        for (let location of [
+            this.hand,
+            this.cardsInPlay,
+            this.archives,
+            this.deck,
+            this.discard
+        ]) {
+            for (let card of location) {
+                remainingActions = remainingActions.concat(card.getLegalActions());
+            }
+        }
+        for (let action of _.shuffle(remainingActions)) {
+            interactor.clickCard(action.card);
+            return;
+        }
+        interactor.clickPrompt('End Turn');
+    }
+
+    botPlayPhaseHeur(interactor) {
         // If we have a card we can play, play it
         let unplayed = [];
         for (let card of _.shuffle(this.hand)) {
@@ -176,10 +203,10 @@ class BotPlayer extends Player {
                 if (action instanceof BasePlayAction) {
                     this.speakDebug('Play:' + card.name);
                     this.speakDebug(action);
-                    // false: Don't know how to deploy yet
                     if (this.botShouldPlay(card)) {
                         if (card.type === 'creature') {
                             this.speak('Playing ' + card.name + ' as a creature');
+                            // false: Don't know how to deploy yet
                             interactor.play(card, Math.random() >= 0.5, false);
                             return;
                         } else if (card.type === 'upgrade') {
@@ -321,10 +348,13 @@ class BotPlayer extends Player {
 
     botRandomChoice(interactor) {
         // Selected all of the cards we need to for a multiple card select situation
+        let buttons = _.filter(this.promptState.buttons, (button) => {
+            return button.text !== 'Cancel';
+        });
 
-        if (this.promptState.buttons.length > 0) {
+        if (buttons.length > 0) {
             this.speakDebug('Clicking a random button');
-            let choice = _.sample(this.promptState.buttons, 1)[0].text;
+            let choice = _.sample(buttons, 1)[0].text;
             this.speak('Clicking random button of ' + choice);
             interactor.clickPrompt(choice);
         } else if (this.promptState.selectableCards.length > 0) {
