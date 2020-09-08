@@ -30,15 +30,20 @@ let dummydeck = deckBuilder.buildDeck(
     ['Dis', 'Logos', 'Shadows'],
     [
         'Control the Weak',
-        'Control the Weak',
-        'Control the Weak',
-        'Control the Weak',
-        'Control the Weak',
-        'Control the Weak',
-        'Control the Weak',
-        'Control the Weak',
-        'Control the Weak',
-        'Control the Weak'
+        'Ember Imp',
+        'Shaffles',
+        'Shaffles',
+        'Dextre',
+        'Dextre',
+        'Wild Wormhole',
+        'Library of Babble',
+        'Skippy Timehog',
+        'Bad Penny',
+        'Urchin',
+        'Urchin',
+        'Macis Asp',
+        'Macis Asp',
+        'Gambling Den'
     ]
 );
 
@@ -60,10 +65,12 @@ class ActionRecordItem {
         let promptState = player.promptState;
         let prompt = player.currentPrompt();
 
-        console.log(promptState);
-
         this.menuTitle = prompt.menuTitle;
-        this.source = promptState.base.source ? promptState.base.source.name : undefined;
+        if (promptState.base) {
+            this.source = promptState.base.source ? promptState.base.source.name : undefined;
+        } else {
+            this.source = undefined;
+        }
         this.buttons = _.map(prompt.buttons, (button) => {
             return button.text;
         });
@@ -77,7 +84,7 @@ class ActionRecordItem {
             }
         } else if (data.card) {
             this.action.type = 'card';
-            this.action.selectedCard = this.card;
+            this.action.selectedCard = data.card;
         }
         this.action.selectedCards = promptState.selectedCards;
     }
@@ -90,7 +97,9 @@ class ActionRecordItem {
             source: this.source,
             actionType: this.action.type,
             actionSelectedCards: this.action.selectedCards,
-            actionSelectedCard: this.action.selectedCard,
+            actionSelectedCard: this.action.selectedCard
+                ? this.action.selectedCard.name
+                : undefined,
             actionButton: this.action.button
         };
     }
@@ -101,11 +110,45 @@ class GameStateRecord {
         this.game = game;
         Object.assign(this, this.relevantState(game));
     }
+    scorePlayer(relevantPlayerData) {
+        let s = 0;
+        let forgebase = 3;
+        let forgescale = 1.2;
+        let now = 3; // Multiply times values that we currently have locked
+        let soon = 2; // Multiply times values we can get next turn
+        let later = 1; // Multiply times values that are elusive
+        s += forgebase ** (relevantPlayerData.forged * forgescale);
+        s += (relevantPlayerData.amber / relevantPlayerData.keyCost) * 6 * now;
+        let houses = {};
+        for (let card of relevantPlayerData.hand) {
+            console.log(card);
+            for (let house of card.houses) {
+                let sc = 1 * soon;
+                houses[house] = houses[house] ? houses[house] + sc : sc;
+            }
+        }
+        for (let card of relevantPlayerData.archived) {
+            for (let house of card.houses) {
+                let sc = 1 * later;
+                houses[house] = houses[house] ? houses[house] + sc : sc;
+            }
+        }
+        for (let card of relevantPlayerData.cardsInPlay) {
+            for (let house of card.houses) {
+                let sc = 1 * later;
+                houses[house] = houses[house] ? houses[house] + sc : sc;
+            }
+        }
+        if (houses) {
+            s += Math.max(...Object.values(houses));
+        }
+        return s;
+    }
     // Enough state to make ai value judgements on previous actions
     relevantCardState(cardlist) {
         let relevant = [];
         if (!cardlist) {
-            return {};
+            return [];
         }
         for (let card of cardlist) {
             relevant.push({
@@ -114,14 +157,12 @@ class GameStateRecord {
                 uuid: card.uuid,
                 tokens: card.tokens,
                 traits: card.getTraits(),
-                printedHouse: card.printedHouse, // Not really need for ai but helpful for debug
                 houses: card.getHouses(),
                 power: card.power,
                 armor: card.armor,
                 stunnded: card.stunned,
                 exhausted: card.exhausted,
                 upgrades: this.relevantCardState(card.upgrades),
-                actions: card.getActions(),
                 controller: card.getModifiedController().name,
                 leftFlank: card.isOnFlank('left'),
                 rightFlank: card.isOnFlank('right'),
@@ -134,7 +175,7 @@ class GameStateRecord {
         let data = {};
         data.hand = this.relevantCardState(player.hand);
         data.cardsInPlay = this.relevantCardState(player.cardsInPlay);
-        data.deckSize = player.deckCards.length;
+        data.deckSize = player.deck.length;
         data.discard = this.relevantCardState(player.discard);
         data.purged = this.relevantCardState(player.purged);
         data.archived = this.relevantCardState(player.archived);
@@ -153,12 +194,41 @@ class GameStateRecord {
         }
         data.winner = game.winner ? game.winner.name : undefined;
         data.activePlayer = game.activePlayer ? game.activePlayer.name : undefined;
+        data.activePlayerActions = this.activePlayerActions();
+        data.player1.score = this.scorePlayer(data.player1);
+        data.player2.score = this.scorePlayer(data.player2);
+        data.player1.scoreDelta = data.player1.score - data.player2.score;
+        data.player2.scoreDelta = data.player2.score - data.player1.score;
         return data;
+    }
+    activePlayerActions() {
+        let actions = [];
+        if (!game.activePlayer) {
+            return ['no active player'];
+        }
+        for (let location of [
+            game.activePlayer.hand,
+            game.activePlayer.archives,
+            game.activePlayer.cardsInPlay,
+            game.activePlayer.deck,
+            game.activePlayer.purged
+        ]) {
+            for (let card of location) {
+                actions = actions.concat(card.getLegalActions(game.activePlayer));
+            }
+        }
+        // Maybe insert event triggers here
+        // Maybe prune for card actions that can't be taken if that is not already covered
+        return actions;
     }
     debug() {
         let data = {};
         for (let key in this) {
             if (key === 'game') {
+                continue;
+            }
+            if (key === 'activePlayerActions') {
+                data[key] = this.debugActions(this[key]);
                 continue;
             }
             data[key] = this[key];
@@ -180,16 +250,31 @@ class GameStateRecord {
         }
         return data;
     }
+    debugActions(actions) {
+        let results = [];
+        let cards = {};
+        let i = 0;
+        for (let action of actions) {
+            let ci = i;
+            if (action.card.uuid in cards) {
+                ci = cards[action.card.uuid];
+            } else {
+                cards[action.card.uuid] = i;
+                i += 1;
+            }
+            results.push(
+                '' + ci + ' ' + action.card.name + '[' + action.card.location + ']:' + action.title
+            );
+        }
+        return results;
+    }
     debugCard(card, locationController) {
         let data = card.name + '(';
         for (let key in card) {
-            if (key === 'actions' || key === 'name' || key === 'uuid' || key === 'printedHouse') {
+            if (key === 'actions' || key === 'name' || key === 'uuid') {
                 continue;
             }
             if (key === 'controller' && card[key] === locationController) {
-                continue;
-            }
-            if (key === 'houses') {
                 continue;
             }
             if (
@@ -261,21 +346,37 @@ class RecordGame extends Game {
         this.actionRecord = [];
     }
 
+    /* Record the game state. If the last item is a gamestate, overwrite that one */
+    recordGameState() {
+        if (this.actionRecord[this.actionRecord.length - 1] instanceof GameStateRecord) {
+            this.actionRecord[this.actionRecord.length - 1] = new GameStateRecord(this);
+        } else {
+            this.actionRecord.push(new GameStateRecord(this));
+        }
+    }
+
+    recordAction(player, data) {
+        let actionRecord = new ActionRecordItem(player, data);
+        // We don't need to record our first click on a card, just what we do with it
+        if (!actionRecord.source && actionRecord.action.type === 'card') {
+            return;
+        }
+        this.actionRecord.push(actionRecord);
+        return actionRecord;
+    }
+
     menuButton(playerName, arg, uuid, method) {
         let player = this.getPlayerByName(playerName);
         if (!player) {
             return false;
         }
 
-        this.actionRecord.push(
-            new ActionRecordItem(player, {
-                arg: arg
-            })
-        );
+        this.recordGameState(); // Record state before action
+        this.recordAction(player, { arg: arg });
 
         // check to see if the current step in the pipeline is waiting for input
         let success = this.pipeline.handleMenuCommand(player, arg, uuid, method);
-        this.actionRecord.push(new GameStateRecord(this));
+        this.recordGameState(); // Record state after action
         return success;
     }
     cardClicked(sourcePlayer, cardId) {
@@ -291,16 +392,16 @@ class RecordGame extends Game {
             return;
         }
 
-        this.actionRecord.push(
-            new ActionRecordItem(player, {
-                card: card
-            })
-        );
+        this.recordGameState(); // Record state before action
+        let actionRecord = this.recordAction(player, { card: card });
 
         // Check to see if the current step in the pipeline is waiting for input
         this.pipeline.handleCardClicked(player, card);
 
-        this.actionRecord.push(new GameStateRecord(this));
+        // If we didn't record the action, it probably doesn't change the game state
+        if (actionRecord) {
+            this.recordGameState(); // Record state after action
+        }
     }
     recordWinner(winner, reason) {
         if (this.winner) {
@@ -314,7 +415,7 @@ class RecordGame extends Game {
         this.winReason = reason;
         //this.router.gameWon(this, reason, winner);
         this.queueStep(new GameWonPrompt(this, winner));
-        this.actionRecord.push(new GameStateRecord(this));
+        this.recordGameState();
     }
 }
 
