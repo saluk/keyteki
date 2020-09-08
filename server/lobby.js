@@ -633,7 +633,7 @@ class Lobby {
             authToken: authToken,
             gameId: gameId,
             name: gameNode.identity,
-            port: gameNode.port,
+            port: this.configService.getValueForSection('lobby', 'gamePort') || gameNode.port,
             protocol: gameNode.protocol,
             user: user
         });
