@@ -1,4 +1,5 @@
 const OpenInformationLocations = ['play area', 'purged', 'discard'];
+const BotPlayer = require('./bot/BotPlayer');
 
 class CardVisibility {
     constructor(game) {
@@ -6,8 +7,9 @@ class CardVisibility {
         this.rules = [
             (card) => this.isPublicRule(card),
             (card) => this.isEffectRule(card),
+            (card) => this.isControllerBotRule(card),
             (card, player) => this.isControllerRule(card, player),
-            (card, player) => this.isSpectatorRule(card, player)
+            (card, player) => this.isSpectatorRule(card, player),
         ];
     }
 
@@ -29,6 +31,10 @@ class CardVisibility {
 
     isEffectRule(card) {
         return card.getEffects('visbileIn').some((effect) => effect === card.location);
+    }
+
+    isControllerBotRule(card) {
+        return card.controller instanceof BotPlayer;
     }
 
     isControllerRule(card, player) {
