@@ -27,7 +27,8 @@ class ChatCommands {
             '/stop-clocks': this.stopClocks,
             '/start-clocks': this.startClocks,
             '/token': this.setToken,
-            '/unforge': this.unforge
+            '/unforge': this.unforge,
+            '/debug': this.debug
         };
         this.tokens = ['amber', 'damage', 'enrage', 'power', 'stun', 'ward'];
         this.houses = [...Constants.Houses, 'none'];
@@ -129,6 +130,10 @@ class ChatCommands {
         if (forgedKeyIndex !== -1) {
             player.keysForgedThisRound.splice(forgedKeyIndex, 1);
         }
+    }
+
+    debug(player, args) {
+        console.log(this.game);
     }
 
     activeHouse(player, args) {
