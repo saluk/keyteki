@@ -1,12 +1,17 @@
 const _ = require('underscore');
+const lo = require('lodash');
 const util = require('util');
 const logger = require('../../log');
+const GameStateRecord = require('./gamestaterecord');
+const ActionRecordItem = require('./ActionRecordItem');
+const GameCopy = require('./GameCopy');
 
 const Player = require('../player.js');
 
 // For the bot to interact
 const PlayerInteractionWrapper = require('../../../test/helpers/playerinteractionwrapper.js');
 const BasePlayAction = require('../BaseActions/BasePlayAction');
+const DiscardAction = require('../BaseActions/DiscardAction');
 
 class BotPlayer extends Player {
     constructor(...args) {
@@ -20,7 +25,7 @@ class BotPlayer extends Player {
         /* For testing specific cards */
 
         for (let card of this.deck) {
-            if (card.name === 'Mug' || card.name === 'Gateway to Dis') {
+            if (card.name === 'Tempting Offer' || card.name === 'Fangtooth Cavern') {
                 this.moveCard(card, 'hand');
             }
         }
@@ -28,11 +33,12 @@ class BotPlayer extends Player {
 
     speak(...args) {
         this.game.gameChat.addMessage('{0}: {1}', this, args);
-        /*logger.debug(
+        console.log(this.game.gameChat.messages[this.game.gameChat.messages.length - 1].message);
+        logger.debug(
             util.inspect(
                 this.game.gameChat.messages[this.game.gameChat.messages.length - 1].message
             )
-        );*/
+        );
     }
 
     speakDebug(...objects) {
@@ -48,23 +54,73 @@ class BotPlayer extends Player {
             );
         });
         s = inspected.join(', ');
-        //logger.debug(s);
+        logger.debug(s);
         //this.speak(s);
+    }
+
+    promptDebug() {
+        let d = {
+            phase: this.game.pipeline.getCurrentStep().name,
+            activePlayer: this.game.activePlayer == this,
+
+        }
+    }
+
+    tick(game) {
+        let gameCopy = new GameCopy();
+        let bestScore = 0;
+        let bestState = null;
+        let startState = gameCopy.saveGame(game);
+        console.log('start at score:' + new GameStateRecord(game)[this.name].scoreDelta);
+        console.log('bot tick');
+        for (let attempt=0; attempt<=0; attempt++) {
+            console.log('bot think attempt ' + attempt);
+            gameCopy.restoreGame(startState, game);
+            let changes = false;
+            for (let i = 0; i < 6; i++) {
+                if (this.botRespond()) {
+                    changes = true;
+                }
+            }
+            let record = new GameStateRecord(game);
+            if(changes && (!bestState || record[this.name].scoreDelta > bestScore)) {
+                bestScore = record[this.name].scoreDelta;
+                bestState = gameCopy.saveGame(game);
+                console.log('updated score for attempt ' + attempt + ':' + bestScore);
+            }
+            else if (changes) {
+                console.log('ignoring score for attempt ' + attempt + ':' + record[this.name].scoreDelta);
+            } else {
+                console.log('nochange for attempt ' + attempt);
+            }
+        }
+        if(bestState) {
+            console.log(bestState.activePlayer);
+            gameCopy.restoreGame(bestState, game);
+            console.log('found best state');
+            console.log(game.activePlayer? game.activePlayer.name : 'no active player');
+            return true;
+        } else {
+            console.log('no best state found');
+            console.log(game.activePlayer? game.activePlayer.name : 'no active player');
+            return false;
+        }
     }
 
     botRespond() {
         this.speakDebug('  ---   THINKING ---  ');
         this.speakDebug(this.game.pipeline.getCurrentStep());
-        if (
-            this.game.pipeline.getCurrentStep() &&
-            _.contains(['main', 'key', 'house', 'draw'], this.game.pipeline.getCurrentStep().name)
+        if(this.promptState && 
+            (
+                lo.includes(this.promptState.promptTitle,'Waiting for opponent') ||
+                lo.includes(this.promptState.menuTitle, 'Waiting for opponent')
+            )
         ) {
-            if (this.game.activePlayer != this) {
-                return false;
-            }
+            return false;
         }
         let interactor = new PlayerInteractionWrapper(this.game, this);
         if (this.promptState) {
+            this.speak(new ActionRecordItem(this).debugString());
             return this.handlePrompt(interactor);
         }
         return false;
@@ -179,6 +235,9 @@ class BotPlayer extends Player {
             }
         }
         for (let action of _.shuffle(remainingActions)) {
+            if(action instanceof DiscardAction) {
+                continue;
+            }
             interactor.clickCard(action.card);
             return;
         }
