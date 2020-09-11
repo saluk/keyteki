@@ -1,4 +1,6 @@
 const _ = require('underscore');
+const lo = require('lodash');
+
 const EventEmitter = require('events');
 const moment = require('moment');
 
@@ -88,6 +90,7 @@ class Game extends EventEmitter {
             let PlayerClass;
             if (player.isBot) {
                 PlayerClass = BotPlayer;
+                this.manualMode = true;
             } else {
                 PlayerClass = Player;
             }
@@ -111,22 +114,19 @@ class Game extends EventEmitter {
         this.router = options.router;
     }
 
-    processBots(numberOfSteps = 1) {
+    processBots() {
         if (this.winner) {
             return;
         }
-        let changes = false;
-        for (let i = 0; i < numberOfSteps; i++) {
-            for (let bot of _.filter(this.getPlayers(), (player) => {
-                return player instanceof BotPlayer;
-            })) {
-                while (bot.botRespond()) {
-                    changes = true;
-                    break;
-                }
+        let anyBotChanges = false;
+        for (let bot of _.filter(this.getPlayers(), (player) => {
+            return player instanceof BotPlayer;
+        })) {
+            if(bot.tick(this)) {
+                anyBotChanges = true;
             }
         }
-        return changes;
+        return anyBotChanges;
     }
 
     simulate() {
