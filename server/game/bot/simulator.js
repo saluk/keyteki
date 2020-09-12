@@ -47,14 +47,14 @@ let dummydeck = deckBuilder.buildDeck(
         'Urchin',
         'Macis Asp',
         'Macis Asp',
-        'Gambling Den'
+        //'Gambling Den'
     ]
 );
 
 class RecordGame extends Game {
     constructor(options) {
+        options.botStrategy = 'random';
         super(options);
-        this.botStrategy = 'random';
         this.actionRecord = [];
     }
 

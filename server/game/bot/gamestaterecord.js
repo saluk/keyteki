@@ -1,3 +1,5 @@
+const _ = require('underscore');
+
 class GameStateRecord {
     constructor(game) {
         this.game = game;

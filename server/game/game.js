@@ -86,7 +86,7 @@ class Game extends EventEmitter {
 
         this.cardVisibility = new CardVisibility(this);
 
-        this.botStrategy = 'standard';
+        this.botStrategy = options.botStrategy || 'standard';
 
         _.each(details.players, (player) => {
             if (player.isBot) {

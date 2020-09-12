@@ -330,9 +330,12 @@ var getActionsFromGameAction = function(actionRoot) {
 }
 var getActionsFromBase = function(promptStateBase) {
     let actions = [];
-    actions = actions.concat(getActionsFromGameAction(promptStateBase.properties.gameAction));
-    for(const target of promptStateBase.context.ability.targets) {
-        actions = actions.concat(getActionsFromGameAction(target.properties.gameAction));
+    if(promptStateBase.properties)
+        actions = actions.concat(getActionsFromGameAction(promptStateBase.properties.gameAction));
+    if(promptStateBase.context) {
+        for(const target of promptStateBase.context.ability.targets) {
+            actions = actions.concat(getActionsFromGameAction(target.properties.gameAction));
+        }
     }
     /*if(promptStateBase.context.preThenEvents) {
         for(const event of promptStateBase.context.preThenEvents) {
@@ -361,13 +364,13 @@ var promptHasAction = function(promptState, actionList) {
 
 var promptText = function(bot) {
     let s = '';
-    if(bot.promptState.promptTitle.search)
+    if(bot.promptState.promptTitle && bot.promptState.promptTitle.search)
         s += bot.promptState.promptTitle + ' ';
-    else if(bot.promptState.promptTitle.text)
+    else if(bot.promptState.promptTitle && bot.promptState.promptTitle.text)
         s += bot.promptState.promptTitle.text + ' ';
-    if(bot.promptState.menuTitle.search)
+    if(bot.promptState.menuTitle && bot.promptState.menuTitle.search)
         s += bot.promptState.menuTitle + ' ';
-    else if(bot.promptState.menuTitle.text)
+    else if(bot.promptState.menuTitle && bot.promptState.menuTitle.text)
         s += bot.promptState.menuTitle.text + ' ';
     return s;
 }
@@ -476,13 +479,14 @@ class BotPlayer extends Player {
             this.playPhaseRules = [new RandomPhase, new PlayPhaseEnd];
             this.otherRules = [new SelectRandomCards, new SelectRandomButton];
         } else if (strategy === 'standard') {
-            this.houseChoiceRules = [new HandPlusBoard];
+            this.houseChoiceRules = [new HandPlusBoard, new SelectRandomButton];
             this.playPhaseRules = [
                 new PlayPhasePlay,
                 new PlayPhaseDiscardAllFromHand,
                 new PlayPhaseUse,
                 new RandomPhase,
-                new PlayPhaseEnd];
+                new PlayPhaseEnd
+            ];
             this.otherRules = [
                 new AlwaysExalt,
                 new HealWardCaptureOurCards,
@@ -530,7 +534,7 @@ class BotPlayer extends Player {
             );
         });
         s = inspected.join(', ');
-        logger.debug(s);
+        //logger.debug(s);
         //this.speak(s);
     }
 
