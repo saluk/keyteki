@@ -3,6 +3,10 @@ class BaseStep {
         this.game = game;
     }
 
+    assignGame(game) {
+        this.game = game;
+    }
+
     continue() {}
 
     onCardClicked() {

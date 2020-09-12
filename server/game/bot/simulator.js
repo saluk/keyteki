@@ -54,6 +54,7 @@ let dummydeck = deckBuilder.buildDeck(
 class RecordGame extends Game {
     constructor(options) {
         super(options);
+        this.botStrategy = 'random';
         this.actionRecord = [];
     }
 

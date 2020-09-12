@@ -7,16 +7,492 @@ const ActionRecordItem = require('./ActionRecordItem');
 const GameCopy = require('./GameCopy');
 
 const Player = require('../player.js');
+const Card = require('../Card.js');
+const Game = require('../game.js');
 
 // For the bot to interact
 const PlayerInteractionWrapper = require('../../../test/helpers/playerinteractionwrapper.js');
 const BasePlayAction = require('../BaseActions/BasePlayAction');
 const DiscardAction = require('../BaseActions/DiscardAction');
 
+class BotRule {
+    constructor() {
+        this.failed = false;
+    }
+    applyRule(bot) {
+        this.failed = false;
+        return this.apply(bot);
+    }
+    fail() {
+        this.failed = true;
+    }
+
+    /* Overrides */
+    match(bot) {
+        return true;
+    }
+    apply(bot) {
+        return;
+    }
+}
+
+class HandPlusBoard extends BotRule {
+    apply(bot) {
+        let counts = {};
+        for (const card of bot.hand.concat(bot.cardsInPlay)) {
+            for (const house of card.getHouses()) {
+                counts[house] = counts[house] ? counts[house] + 1 : 1;
+            }
+        }
+        let houses = _.pairs(counts);
+        houses.sort(function (a, b) {
+            return -(a[1] - b[1]);
+        });
+        for (let house of houses) {
+            bot.speak('I see ' + house[1] + ' cards of house ' + house[0]);
+        }
+        bot.speak('I choose ' + houses[0][0]);
+        try {
+            bot.interactor.clickPrompt(houses[0][0]);
+        } catch {
+            this.fail();
+        }
+        bot.speak('Cards in my hand:', bot.hand);
+    }
+}
+
+class RandomPhase extends BotRule {
+    apply(bot) {
+        let remainingActions = [];
+        for (let location of [
+            bot.hand,
+            bot.cardsInPlay,
+            bot.archives,
+            bot.deck,
+            bot.discard
+        ]) {
+            for (let card of location) {
+                remainingActions = remainingActions.concat(card.getLegalActions());
+            }
+        }
+        for (let action of _.shuffle(remainingActions)) {
+            bot.interactor.clickCard(action.card);
+            bot.interactor.clickPrompt(action.title);
+            return;
+        }
+        bot.interactor.clickPrompt('End Turn');
+    }
+}
+
+class PlayPhasePlay extends BotRule {
+    match(bot) {
+        return bot.hand.filter(
+            function(card){
+                return card.getLegalActions().filter(function(action){
+                    return action instanceof BasePlayAction;
+                }).length > 0;
+            }
+        ).length > 0;
+    }
+    apply(bot) {
+        // If we have a card we can play, play it
+        let unplayed = [];
+        for (let card of _.shuffle(bot.hand)) {
+            let actions = card.getLegalActions();
+            bot.speak(
+                'legal actions for',
+                card,
+                actions
+                    .map((action) => {
+                        return action.title;
+                    })
+                    .join(', ')
+            );
+            for (let action of card.getLegalActions()) {
+                if (action instanceof BasePlayAction) {
+                    bot.speakDebug('Play:' + card.name);
+                    bot.speakDebug(action);
+                    if (bot.botShouldPlay(card)) {
+                        if (card.type === 'creature') {
+                            bot.speak('Playing ' + card.name + ' as a creature');
+                            // false: Don't know how to deploy yet
+                            bot.interactor.play(card, Math.random() >= 0.5, false);
+                            return;
+                        } else if (card.type === 'upgrade') {
+                            let target = bot.botUpgradeTarget(card);
+                            if (target) {
+                                bot.speak('Playing ' + card.name + ' as an upgrade on ' + target.name);
+                                bot.interactor.playUpgrade(card, target);
+                                return;
+                            }
+                        } else {
+                            bot.speak('Playing ' + card.name);
+                            bot.interactor.play(card);
+                            return;
+                        }
+                    }
+                }
+            }
+            unplayed.push(card);
+        }
+        if (unplayed.length > 0) {
+            bot.speak('Could not play ', unplayed);
+        }
+        this.fail();
+    }
+}
+
+class PlayPhaseDiscardAllFromHand extends BotRule {
+    match(bot) {
+        return bot.hand.filter(
+            function(card){
+                return card.getLegalActions().filter(function(action){
+                    return action instanceof DiscardAction;
+                }).length > 0;
+            }
+        ).length > 0;
+    }
+    apply(bot) {
+        // If we have a card we can play, play it
+        let undiscarded = [];
+        for (let card of _.shuffle(bot.hand)) {
+            for (let action of card.getLegalActions()) {
+                if (action instanceof DiscardAction) {
+                    bot.speakDebug('Discard:' + card.name);
+                    bot.speakDebug(action);
+                    bot.interactor.clickCard(action.card);
+                    bot.interactor.clickPrompt(action.title);
+                    return true;
+                }
+            }
+            undiscarded.push(card);
+        }
+        if (undiscarded.length > 0) {
+            bot.speak('Could not discard ', undiscarded);
+        }
+        this.fail();
+    }
+}
+
+const USE_TITLES = {
+    'omni': "Use this card's Omni ability",
+    'action': "Use this card's Action ability",
+    'reap': 'Reap with this creature',
+    'fight': 'Fight with this creature'
+}
+
+class PlayPhaseUse extends BotRule {
+    match(bot) {
+        return bot.cardsInPlay.filter(
+            function(card){
+                return card.getLegalActions().filter(function(action){
+                    return _.contains(Object.values(USE_TITLES), action);
+                }).length > 0;
+            }
+        ).length > 0;
+    }
+    apply(bot) {
+        // If we have a card we can use, use it
+        let unused = [];
+        for (let card of _.shuffle(bot.cardsInPlay)) {
+            bot.speakDebug(card.name);
+            let actions = card.getLegalActions();
+            if (actions.length == 0) {
+                continue;
+            }
+            for (let action of _.shuffle(actions)) {
+                bot.speakDebug(action);
+                bot.speak('Thinking about action ' + action.title);
+                switch (action.title) {
+                    case "Use this card's Omni ability":
+                        bot.interactor.useAction(card);
+                        return;
+                    case "Use this card's Action ability":
+                        bot.interactor.useAction(card);
+                        return;
+                    case 'Reap with this creature':
+                        bot.interactor.reap(card);
+                        return;
+                    case 'Fight with this creature':
+                        bot.interactor.fightWith(card, _.sample(bot.opponent.cardsInPlay, 1)[0]);
+                        return;
+                    default:
+                        continue;
+                }
+            }
+            unused.push(card);
+        }
+        if (unused.length > 0) {
+            bot.speak('Wanted to use ', unused);
+        }
+        this.fail()
+    }
+}
+
+class SelectRandomButton extends BotRule {
+    apply(bot) {
+        let buttons = _.filter(bot.promptState.buttons, (button) => {
+            return button.text !== 'Cancel';
+        });
+        if(!(buttons.length > 0)) {
+            return this.fail();
+        }
+        bot.speakDebug('Clicking a random button');
+        let choice = _.sample(buttons, 1)[0].text;
+        bot.speak('Clicking random button of ' + choice);
+        bot.interactor.clickPrompt(choice);
+    }
+}
+
+var debugX = function(x, name) {
+    if(x === undefined || x === null){
+        console.log('\n'+name+' is undefined or null');
+        return;
+    }
+    console.log('\ndebug: ' + name+' '+x.constructor.name);
+    if(x instanceof Array) {
+        if(x.length == 0){
+            console.log('[]');
+            return;
+        }
+        for(const i in x) {
+            debugX(x[i], name + '-' + i);
+        }
+    } else {
+        for(const key in x) {
+            if(key === 'player' || key === 'game' || key === 'card') {
+                continue;
+            }
+            console.log(key + '=' + x[key]);
+        }
+    }
+}
+var debugY = function(ob, indent, repeats, repeatKeys) {
+    if(!indent)
+        indent = '';
+    if(!repeats)
+        repeats = [];
+    if(!repeatKeys)
+        repeatKeys = [];
+    for(const key in ob) {
+        let value = ob[key];
+        if(_.contains(repeats, value)){
+            console.log(indent+key+':repeat>'+repeatKeys[repeats.indexOf(value)]);
+            continue;
+        }
+        if(
+            typeof value === 'string' ||
+            value instanceof String ||
+            (typeof value === 'number' && isFinite(value)) ||
+            typeof value === 'function' ||
+            value === null ||
+            typeof value === 'undefined' ||
+            typeof value === 'boolean' ||
+            (value && typeof value === 'object' && value.constructor === RegExp)
+        ) {
+            console.log(indent+key+':'+value);
+            continue;
+        }
+        repeats.push(value);
+        repeatKeys.push(key);
+        if(value instanceof Card) {
+            console.log(indent+key+':Card>'+value.name);
+            continue;
+        }
+        if(key === 'game') {
+            console.log(indent+key+':Game');
+            continue;
+        }
+        if(value instanceof Player) {
+            console.log(indent+key+':Player>'+value.name);
+            continue;
+        }
+        console.log(indent+key+':'+value.constructor.name);
+        debugY(value, indent+'  ', repeats, repeatKeys);
+    }
+}
+
+var getActionsFromGameAction = function(actionRoot) {
+    if(actionRoot == undefined || actionRoot == null)
+        return [];
+    let actions = [];
+    if(actionRoot instanceof Array) {
+        for(const action of actionRoot) {
+            actions = actions.concat(getActionsFromGameAction(action))
+        }
+    } else {
+        actions.push(actionRoot);
+        if(actionRoot.gameActions) {
+            actions = actions.concat(getActionsFromGameAction(actionRoot.gameActions));
+        }
+    }
+    return actions;
+}
+var getActionsFromBase = function(promptStateBase) {
+    let actions = [];
+    actions = actions.concat(getActionsFromGameAction(promptStateBase.properties.gameAction));
+    for(const target of promptStateBase.context.ability.targets) {
+        actions = actions.concat(getActionsFromGameAction(target.properties.gameAction));
+    }
+    /*if(promptStateBase.context.preThenEvents) {
+        for(const event of promptStateBase.context.preThenEvents) {
+            actions = actions.concat(getActionsFromGameAction(event.gameAction));
+        }
+    }*/
+    if(promptStateBase.properties.context) {
+        actions = actions.concat(getActionsFromGameAction(promptStateBase.properties.context.ability.gameAction));
+    }
+    let uniqueActions = [];
+    for(const action of actions) {
+        if(!_.contains(uniqueActions, action))
+            uniqueActions.push(action);
+    }
+    return uniqueActions;
+}
+
+var promptHasAction = function(promptState, actionList) {
+    console.log(getActionsFromBase(promptState.base).map((action)=>action.name));
+    let actionNames = getActionsFromBase(promptState.base).map((action)=>action.name);
+    for(const actionName of actionList) {
+        if(_.contains(actionNames, actionName))
+            return true;
+    }
+}
+
+var promptText = function(bot) {
+    let s = '';
+    if(bot.promptState.promptTitle.search)
+        s += bot.promptState.promptTitle + ' ';
+    else if(bot.promptState.promptTitle.text)
+        s += bot.promptState.promptTitle.text + ' ';
+    if(bot.promptState.menuTitle.search)
+        s += bot.promptState.menuTitle + ' ';
+    else if(bot.promptState.menuTitle.text)
+        s += bot.promptState.menuTitle.text + ' ';
+    return s;
+}
+
+var selectCards = function(bot, possible) {
+    if(!bot.promptState.selectableCards || bot.promptState.selectableCards.length == 0){
+        return false;
+    }
+    possible = possible.filter(function(card){
+        return _.contains(bot.promptState.selectableCards, card);
+    });
+    if(possible.length == 0) {
+        return false;
+    }
+    let statedMaximum = bot.promptState.base.selector.numCards;
+    let maximum = _.min([(statedMaximum || possible.length), possible.length]);
+    console.log('max:'+statedMaximum+' '+maximum);
+    let chosen = 0;
+    while(chosen < maximum) {
+        let card = possible.pop();
+        bot.speak('Selecting card ' + card.name);
+        bot.interactor.clickCard(card);
+        chosen += 1;
+    }
+    if (!statedMaximum || statedMaximum > 1) {
+        bot.speak('No new creature selections to add');
+        bot.interactor.clickPrompt('Done');
+    }
+    return true;
+}
+
+class AlwaysExalt extends BotRule {
+    match(bot) {
+        debugY(bot.promptState);
+        return promptHasAction(bot.promptState, ['exalt']);
+    }
+    apply(bot) {
+        try {
+            bot.interactor.clickPrompt('Yes');
+        } catch {
+            let cards = _.shuffle(bot.opponent.cardsInPlay).concat(
+                _.shuffle(bot.cardsInPlay)
+            ).filter(function(card){
+                return _.contains(bot.promptState.selectableCards, card)
+            });
+            for(const card in cards) {
+                bot.interactor.clickCard(card);
+            }
+        }
+    }
+}
+
+class HealWardCaptureOurCards extends BotRule {
+    match(bot) {
+        if(promptHasAction(bot.promptState, ['ward', 'heal'])){
+            return true;
+        }
+        return (bot.promptState.selectableCards.length > 0 && promptText(bot).search(/ward|heal|capture/i) > -1);
+    }
+    apply(bot) {
+        if(selectCards(bot, _.shuffle(bot.cardsInPlay))){
+            return;
+        }
+        return this.fail();
+    }
+}
+
+class DamageDestroyOpponentCards extends BotRule {
+    match(bot) {
+        if(promptHasAction(bot.promptState, ['damage', 'destroy'])){
+            return true;
+        }
+        
+        return (bot.promptState.selectableCards.length > 0 && promptText(bot).search(/damage|destroy/i) > -1);
+    }
+    apply(bot) {
+        if(selectCards(bot, _.shuffle(bot.opponent.cardsInPlay))){
+            return;
+        }
+        return this.fail();
+    }
+}
+
+class SelectRandomCards extends BotRule {
+    apply(bot) {
+        if(selectCards(bot, _.shuffle(bot.promptState.selectableCards))) {
+            return;
+        }
+        return this.fail();
+    }
+}
+
+class PlayPhaseEnd extends BotRule {
+    apply(bot) {
+        bot.interactor.clickPrompt('End Turn');
+        // Maybe check if we need to press yes first
+        bot.interactor.clickPrompt('Yes');
+    }
+}
+
 class BotPlayer extends Player {
-    constructor(...args) {
+    constructor(strategy='random', ...args) {
         super(...args);
-        this.playMethod = 'Random';
+        if(strategy === 'random') {
+            this.houseChoiceRules = [new SelectRandomCards, new SelectRandomButton];
+            this.playPhaseRules = [new RandomPhase, new PlayPhaseEnd];
+            this.otherRules = [new SelectRandomCards, new SelectRandomButton];
+        } else if (strategy === 'standard') {
+            this.houseChoiceRules = [new HandPlusBoard];
+            this.playPhaseRules = [
+                new PlayPhasePlay,
+                new PlayPhaseDiscardAllFromHand,
+                new PlayPhaseUse,
+                new RandomPhase,
+                new PlayPhaseEnd];
+            this.otherRules = [
+                new AlwaysExalt,
+                new HealWardCaptureOurCards,
+                new DamageDestroyOpponentCards,
+                new SelectRandomCards,
+                new SelectRandomButton
+            ];
+        } else {
+            throw new Error('Bot not created with strategy');
+        }
     }
 
     drawCardsToHand(numCards) {
@@ -25,7 +501,7 @@ class BotPlayer extends Player {
         /* For testing specific cards */
 
         for (let card of this.deck) {
-            if (card.name === 'Tempting Offer' || card.name === 'Fangtooth Cavern') {
+            if (card.name === 'Defense Initiative') {
                 this.moveCard(card, 'hand');
             }
         }
@@ -67,6 +543,11 @@ class BotPlayer extends Player {
     }
 
     tick(game) {
+        return(this.botRespond());
+    }
+
+    /* This tick function is incomplete until the gamecopy is working correctly */
+    tickForBestScoreAfterSeveralMoves(game) {
         let gameCopy = new GameCopy();
         let bestScore = 0;
         let bestState = null;
@@ -107,26 +588,29 @@ class BotPlayer extends Player {
         }
     }
 
+    get interactor() {
+        return new PlayerInteractionWrapper(this.game, this);
+    }
+
     botRespond() {
         this.speakDebug('  ---   THINKING ---  ');
         this.speakDebug(this.game.pipeline.getCurrentStep());
         if(this.promptState && 
             (
-                lo.includes(this.promptState.promptTitle,'Waiting for opponent') ||
-                lo.includes(this.promptState.menuTitle, 'Waiting for opponent')
+                lo.includes(promptText(this),'Waiting for opponent')
             )
         ) {
             return false;
         }
-        let interactor = new PlayerInteractionWrapper(this.game, this);
         if (this.promptState) {
             this.speak(new ActionRecordItem(this).debugString());
-            return this.handlePrompt(interactor);
+            return this.handlePrompt();
         }
         return false;
     }
 
-    handlePrompt(interactor) {
+    handlePrompt() {
+        let interactor = this.interactor;
         this.speakDebug(this.currentPrompt());
         if (!interactor.canAct) {
             return false;
@@ -155,32 +639,21 @@ class BotPlayer extends Player {
         //}
         if (interactor.hasPrompt('House Choice')) {
             this.speak('Choosing a house:');
-            this.botChooseHouse(interactor);
+            return this.evaluateRules(this.houseChoiceRules);
         } else if (interactor.hasPrompt('Play phase')) {
             this.speak('Playing the main phase');
             try {
-                this.botPlayPhase(interactor);
+                this.evaluateRules(this.playPhaseRules);
             } catch (err) {
                 return true;
             }
         } else if (interactor.hasPrompt('End Turn')) {
             this.speak('Ending the turn');
             interactor.clickPrompt('Yes');
-        } else if (
-            this.promptState.menuTitle.text &&
-            this.promptState.menuTitle.text.search('enable manual mode') > -1
-        ) {
+        } else if (promptText(this).search('enable manual mode') > -1) {
             interactor.clickPrompt('Yes');
-        } else if (
-            this.promptState.base &&
-            this.promptState.base.properties &&
-            this.promptState.base.properties.botEffect
-        ) {
-            this.speak('Thinking about what to do');
-            this.botEvaluateEffect(interactor, this.promptState.base.properties.botEffect);
         } else {
-            this.speak('Making a random choice');
-            this.botRandomChoice(interactor);
+            this.evaluateRules(this.otherRules);
         }
         return true;
     }
@@ -194,161 +667,33 @@ class BotPlayer extends Player {
         return false;
     }
 
-    botChooseHouse(interactor) {
-        let counts = {};
-        for (let card of this.hand.concat(this.cardsInPlay)) {
-            for (let house of card.getHouses()) {
-                counts[house] = counts[house] ? counts[house] + 1 : 1;
-            }
-        }
-        let houses = _.pairs(counts);
-        houses.sort(function (a, b) {
-            return -(a[1] - b[1]);
-        });
-        for (let house of houses) {
-            this.speak('I see ' + house[1] + ' cards of house ' + house[0]);
-        }
-        this.speak('I choose ' + houses[0][0]);
-        try {
-            interactor.clickPrompt(houses[0][0]);
-        } catch {
-            return this.botRandomChoice(interactor);
-        }
-        this.speak('Cards in my hand:', this.hand);
-    }
-
-    botPlayPhase(interactor) {
-        this['botPlayPhase' + this.playMethod](interactor);
-    }
-
-    botPlayPhaseRandom(interactor) {
-        let remainingActions = [];
-        for (let location of [
-            this.hand,
-            this.cardsInPlay,
-            this.archives,
-            this.deck,
-            this.discard
-        ]) {
-            for (let card of location) {
-                remainingActions = remainingActions.concat(card.getLegalActions());
-            }
-        }
-        for (let action of _.shuffle(remainingActions)) {
-            if(action instanceof DiscardAction) {
-                continue;
-            }
-            interactor.clickCard(action.card);
-            return;
-        }
-        interactor.clickPrompt('End Turn');
-    }
-
-    botPlayPhaseHeur(interactor) {
-        // If we have a card we can play, play it
-        let unplayed = [];
-        for (let card of _.shuffle(this.hand)) {
-            let actions = card.getLegalActions();
-            this.speak(
-                'legal actions for',
-                card,
-                actions
-                    .map((action) => {
-                        return action.title;
-                    })
-                    .join(', ')
-            );
-            for (let action of card.getLegalActions()) {
-                if (action instanceof BasePlayAction) {
-                    this.speakDebug('Play:' + card.name);
-                    this.speakDebug(action);
-                    if (this.botShouldPlay(card)) {
-                        if (card.type === 'creature') {
-                            this.speak('Playing ' + card.name + ' as a creature');
-                            // false: Don't know how to deploy yet
-                            interactor.play(card, Math.random() >= 0.5, false);
-                            return;
-                        } else if (card.type === 'upgrade') {
-                            let target = this.botUpgradeTarget(card);
-                            if (target) {
-                                this.speak('Playing ' + card.name + ' as an upgrade');
-                                interactor.playUpgrade(card, target);
-                                return;
-                            }
-                        } else {
-                            this.speak('Playing ' + card.name);
-                            interactor.play(card);
-                            return;
-                        }
-                    }
+    evaluateRules(rules) {
+        for(const rule of rules) {
+            if(rule.match(this)) {
+                let result = rule.applyRule(this);
+                if(!rule.failed) {
+                    this.speak('ran rule ' + rule.constructor.name);
+                    return result;
+                } else {
+                    this.speak('failed rule ' + rule.constructor.name);
                 }
+            } else {
+                this.speak('passing up rule ' + rule.constructor.name);
             }
-            unplayed.push(card);
         }
-        if (unplayed.length > 0) {
-            this.speak('Could not play ', unplayed);
-        }
-
-        // If we have a card we can use, use it
-        let unused = [];
-        for (let card of _.shuffle(this.cardsInPlay)) {
-            this.speakDebug(card.name);
-            let actions = card.getLegalActions();
-            if (actions.length == 0) {
-                continue;
-            }
-            for (let action of _.shuffle(actions)) {
-                this.speakDebug(action);
-                this.speak('Thinking about action ' + action.title);
-                switch (action.title) {
-                    case "Use this card's Omni ability":
-                        interactor.useAction(card);
-                        return;
-                    case "Use this card's Action ability":
-                        interactor.useAction(card);
-                        return;
-                    case 'Reap with this creature':
-                        interactor.reap(card);
-                        return;
-                    case 'Fight with this creature':
-                        interactor.fightWith(card, _.sample(this.opponent.cardsInPlay, 1)[0]);
-                        return;
-                    default:
-                        continue;
-                }
-            }
-            unused.push(card);
-        }
-        if (unused.length > 0) {
-            this.speak('Wanted to use ', unused);
-        }
-
-        // If we can't play or use anything, end turn
-        interactor.clickPrompt('End Turn');
     }
 
     botUpgradeTarget(card) {
         let targets = [];
         let playOnThis = true;
         let playOnOpponent = false;
-        for (let effect of card.getPersistentEffects()) {
-            if (!effect.properties || !effect.properties.botEffect) {
-                continue;
-            }
-            let botEffect = effect.properties.botEffect;
-            if (botEffect) {
-                if (botEffect.gainAbility) {
-                    playOnOpponent = false;
-                }
-            }
-        }
         if (playOnThis) {
             this.speak('  this upgrade would be good for my creatures');
-            targets.concat(this.cardsInPlay);
+            targets = targets.concat(this.cardsInPlay);
         }
         if (playOnOpponent) {
             this.speak('  this upgrade would be good on an opponent');
-            targets.concat(this.opponent.cardsInPlay);
+            targets = targets.concat(this.opponent.cardsInPlay);
         }
         if (targets.length > 0) {
             return _.sample(targets, 1)[0];
@@ -356,90 +701,8 @@ class BotPlayer extends Player {
         this.speak('  but no good targets were found');
     }
 
-    botEvaluateEffect(interactor, botEffect) {
-        if (botEffect.type === 'card' && botEffect.cardType === 'creature') {
-            let targets = [];
-            if (botEffect.damage > 0) {
-                this.speak('  this would damage something, look at opponents');
-                targets = targets.concat(this.cardsInPlay);
-            }
-            if (botEffect.creatureamber < 0) {
-                this.speak('  this would gain amber, look at creatures with amber');
-                targets = targets.concat(
-                    this.game.findAnyCardsInPlay((card) => {
-                        card.tokens.amber > 0;
-                    })
-                );
-            }
-            // Limit desired selection by legal selection
-            targets = _.intersection(targets, this.promptState.selectableCards);
-            // No targets we'd like, we'll have to choose something selectable
-            // TODO: check for *may* abilities where we could select nothing
-            if (targets.length == 0) {
-                targets = this.promptState.selectableCards;
-            }
-            this.speakDebug('Chosen targets:', targets);
-            if (targets.length == 0) {
-                // Failed to find a target we like, choose randomly
-                return this.botRandomChoice(interactor);
-            }
-            let card = _.sample(targets, 1)[0];
-            this.speak('Targeting ' + card.name);
-            interactor.clickCard(card);
-        }
-    }
-
     botShouldPlay(card) {
-        for (let reaction of card.getReactions()) {
-            let botEffect = reaction.properties.botEffect;
-            if (botEffect) {
-                if (botEffect.destroy) {
-                    let hold =
-                        this.opponent.creaturesInPlay.length - this.creaturesInPlay.length > 1;
-                    this.speak('Might hold ' + card.name + ' ' + hold);
-                    return hold;
-                }
-            }
-        }
-        this.speak('Yes I should play ' + card.name);
         return true;
-    }
-
-    botRandomChoice(interactor) {
-        // Selected all of the cards we need to for a multiple card select situation
-        let buttons = _.filter(this.promptState.buttons, (button) => {
-            return button.text !== 'Cancel';
-        });
-
-        if (buttons.length > 0) {
-            this.speakDebug('Clicking a random button');
-            let choice = _.sample(buttons, 1)[0].text;
-            this.speak('Clicking random button of ' + choice);
-            interactor.clickPrompt(choice);
-        } else if (this.promptState.selectableCards.length > 0) {
-            let possible = _.shuffle(this.promptState.selectableCards);
-            let statedMaximum = this.promptState.base.selector.numCards;
-            let maximum = _.min([statedMaximum, possible.length]);
-            while (
-                possible.length > 0 &&
-                (!this.promptState.selectedCards || this.promptState.selectedCards.length < maximum)
-            ) {
-                this.speakDebug('Clicking a random card');
-                this.speakDebug(possible);
-                let card = possible.pop();
-                this.speakDebug(card.name);
-                this.speak('Selecting card ' + card.name);
-                interactor.clickCard(card);
-            }
-            if (statedMaximum > 1) {
-                this.speak('No new creature selections to add');
-                interactor.clickPrompt('Done');
-            }
-        } else {
-            this.speakDebug(this.promptState);
-            this.speakDebug('Did not know how to respond');
-            this.speak('Really stuck');
-        }
     }
 }
 

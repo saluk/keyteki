@@ -5,10 +5,7 @@ class WildSpirit extends Card {
         this.whileAttached({
             effect: ability.effects.gainAbility('reap', {
                 gameAction: ability.actions.capture()
-            }),
-            botEffect: {
-                gainAbility: 'capture'
-            }
+            })
         });
     }
 }

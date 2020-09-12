@@ -86,20 +86,25 @@ class Game extends EventEmitter {
 
         this.cardVisibility = new CardVisibility(this);
 
+        this.botStrategy = 'standard';
+
         _.each(details.players, (player) => {
-            let PlayerClass;
             if (player.isBot) {
-                PlayerClass = BotPlayer;
-                this.manualMode = true;
+                this.playersAndSpectators[player.user.username] = new BotPlayer(
+                    this.botStrategy,
+                    player.id,
+                    player.user,
+                    this.owner === player.user.username,
+                    this
+                );
             } else {
-                PlayerClass = Player;
+                this.playersAndSpectators[player.user.username] = new Player(
+                    player.id,
+                    player.user,
+                    this.owner === player.user.username,
+                    this
+                );
             }
-            this.playersAndSpectators[player.user.username] = new PlayerClass(
-                player.id,
-                player.user,
-                this.owner === player.user.username,
-                this
-            );
         });
 
         _.each(details.spectators, (spectator) => {
