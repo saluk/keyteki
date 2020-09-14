@@ -402,7 +402,7 @@ var selectCards = function(bot, possible) {
     return true;
 }
 
-class AlwaysExalt extends BotRule {
+class AlwaysExaltMay extends BotRule {
     match(bot) {
         debugY(bot.promptState);
         return promptHasAction(bot.promptState, ['exalt']);
@@ -411,14 +411,21 @@ class AlwaysExalt extends BotRule {
         try {
             bot.interactor.clickPrompt('Yes');
         } catch {
-            let cards = _.shuffle(bot.opponent.cardsInPlay).concat(
-                _.shuffle(bot.cardsInPlay)
-            ).filter(function(card){
-                return _.contains(bot.promptState.selectableCards, card)
-            });
-            for(const card in cards) {
-                bot.interactor.clickCard(card);
-            }
+            return this.fail();
+        }
+    }
+}
+
+class AlwaysExaltSelectCards extends BotRule {
+    match(bot) {
+        return promptHasAction(bot.promptState, ['exalt']);
+    }
+    apply(bot) {
+        let cards = _.shuffle(bot.opponent.cardsInPlay).concat(
+            _.shuffle(bot.cardsInPlay)
+        );
+        if(!selectCards(bot, cards)) {
+            return this.fail();
         }
     }
 }
@@ -488,7 +495,7 @@ class BotPlayer extends Player {
                 new PlayPhaseEnd
             ];
             this.otherRules = [
-                new AlwaysExalt,
+                new AlwaysExaltMay, new AlwaysExaltSelectCards,
                 new HealWardCaptureOurCards,
                 new DamageDestroyOpponentCards,
                 new SelectRandomCards,
@@ -674,12 +681,17 @@ class BotPlayer extends Player {
     evaluateRules(rules) {
         for(const rule of rules) {
             if(rule.match(this)) {
-                let result = rule.applyRule(this);
-                if(!rule.failed) {
-                    this.speak('ran rule ' + rule.constructor.name);
-                    return result;
-                } else {
-                    this.speak('failed rule ' + rule.constructor.name);
+                try {
+                    let result = rule.applyRule(this);
+                    if(!rule.failed) {
+                        this.speak('ran rule ' + rule.constructor.name);
+                        return result;
+                    } else {
+                        this.speak('failed rule ' + rule.constructor.name);
+                    }
+                } catch(err) {
+                    this.speak('Error processing rule '+rule.constructor.name+': '+err);
+                    continue;
                 }
             } else {
                 this.speak('passing up rule ' + rule.constructor.name);
