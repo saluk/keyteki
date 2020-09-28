@@ -266,11 +266,7 @@ class Card extends EffectSource {
                     onCardPurged: (event, context) =>
                         event.card === context.source && context.source.warded,
                     onCardLeavesPlay: (event, context) =>
-                        event.card === context.source && context.source.warded,
-                    onDamageDealt: (event, context) =>
-                        event.card === context.source &&
-                        !context.event.noGameStateCheck &&
-                        context.source.warded
+                        event.card === context.source && context.source.warded
                 },
                 autoResolve: true,
                 effect: 'remove its ward token',
@@ -1014,11 +1010,12 @@ class Card extends EffectSource {
             enhancements: this.enhancements,
             id: this.id,
             image: this.image,
-            canPlay:
+            canPlay: !!(
                 activePlayer === this.game.activePlayer &&
                 this.game.activePlayer.activeHouse &&
                 isController &&
-                this.getLegalActions(activePlayer, false).length > 0,
+                this.getLegalActions(activePlayer, false).length > 0
+            ),
             cardback: this.owner.deckData.cardback,
             childCards: this.childCards.map((card) => {
                 return card.getSummary(activePlayer, hideWhenFaceup);

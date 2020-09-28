@@ -169,6 +169,10 @@ class DeckService {
             dbExpansions.push(452);
         }
 
+        if (expansions.mm) {
+            dbExpansions.push(479);
+        }
+
         let deck;
         let expansionStr = dbExpansions.join(',');
         try {
@@ -218,7 +222,7 @@ class DeckService {
             case 'lastUpdated':
                 return '"LastUpdated"';
             case 'name':
-                return '"Identity"';
+                return 'lower(d."Name")';
             case 'expansion':
                 return isSort ? '"Expansion"' : 'e."ExpansionId"';
             case 'winRate':

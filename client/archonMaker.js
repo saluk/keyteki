@@ -294,7 +294,7 @@ export const buildDeckList = async (deck, language, translate, allCards) => {
 /**
  * @param {import('./Components/Decks/DeckList').Deck} deck
  */
-export const buildArchon = async (deck) => {
+export const buildArchon = async (deck, hideDeckName) => {
     if (!deck.houses) {
         return Constants.DefaultCard;
     }
@@ -340,15 +340,18 @@ export const buildArchon = async (deck) => {
     canvas.add(house2);
     canvas.add(house3);
 
-    let text;
-    try {
-        text = getCircularText(deck.name, 2500, 1420);
-    } catch (err) {
-        text = false;
+    if (!hideDeckName) {
+        let text;
+        try {
+            text = getCircularText(deck.name, 2500, 1420);
+        } catch (err) {
+            text = undefined;
+        }
+        if (text) {
+            canvas.add(text);
+        }
     }
-    if (text) {
-        canvas.add(text);
-    }
+
     canvas.renderAll();
     let finalArchon;
     try {
@@ -356,6 +359,7 @@ export const buildArchon = async (deck) => {
     } catch (err) {
         return Constants.DefaultCard;
     }
+
     return finalArchon;
 };
 

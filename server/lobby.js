@@ -914,7 +914,7 @@ class Lobby {
             gameFormat: game.gameFormat,
             gameTimeLimit: game.gameTimeLimit,
             gameType: game.gameType,
-            hideDecklists: game.hideDecklists,
+            hideDeckLists: game.hideDeckLists,
             showHand: game.showHand,
             spectators: game.allowSpectators,
             swap: oldGame.swap,
@@ -1092,7 +1092,6 @@ class Lobby {
                     id: player.id,
                     name: player.name,
                     owner: game.owner === player.name,
-                    faction: { cardData: { code: player.faction } },
                     user: new User(player.user)
                 };
             }
